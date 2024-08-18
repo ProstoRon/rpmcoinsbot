@@ -15,7 +15,7 @@
         }
 
         .container {
-            display: none;
+            display: block;
             text-align: center;
         }
 
@@ -47,17 +47,14 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Тень текста */
         }
 
-        /* Показывать элементы только на мобильных устройствах */
+        /* Показывать сообщение только на мобильных экранах */
         @media only screen and (max-width: 768px) {
             .container {
-                display: block;
+                display: none; /* Скрыть контейнер на мобильных экранах */
             }
-        }
 
-        /* Показывать сообщение только на больших экранах */
-        @media only screen and (min-width: 769px) {
             body::after {
-                content: "Этот сайт доступен только на мобильных устройствах.";
+                content: "Этот сайт доступен только на компьютерах.";
                 display: block;
                 position: absolute;
                 top: 50%;
@@ -72,10 +69,6 @@
                 border-radius: 10px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                 z-index: 1; /* Убедитесь, что сообщение поверх остальных элементов */
-            }
-
-            .container {
-                display: none; /* Скрыть контейнер на больших экранах */
             }
         }
     </style>
