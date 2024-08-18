@@ -1,23 +1,35 @@
 <?php
-// Подключение к Firebase
-require 'firebase_config.php';
+// Путь к вашему файлу конфигурации Firebase
+require_once 'firebase_config.php';
 
-// Получение ID пользователя из формы
-$userId = $_POST['userId'] ?? '';
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\ServiceAccount;
 
-if (!empty($userId)) {
-    // Проверка существования записи с таким ID
-    if (checkUserExists($userId, $database)) {
-        // Создание куки с ID пользователя
-        setcookie('userId', $userId, time() + (86400 * 30), "/"); // Кука на 30 дней
+// Получение данных из формы
+$userId = $_POST['userId'] ?? null;
 
-        // Перенаправление на главную страницу
-        header('Location: index.php');
+// Проверка, что ID пользователя передан
+if ($userId) {
+    $serviceAccount = ServiceAccount::fromJsonFile(__DIR__ . '/path/to/your/firebase_config.json');
+    $firebase = (new Factory)->withServiceAccount($serviceAccount)->create();
+    $database = $firebase->getDatabase();
+
+    // Ссылка на путь в базе данных, где будем проверять наличие ID
+    $reference = $database->getReference('users/' . $userId);
+    $snapshot = $reference->getSnapshot();
+
+    // Если ID не существует, создаем нового пользователя
+    if (!$snapshot->exists()) {
+        $reference->set([
+            'userId' => $userId
+        ]);
+        setcookie('userId', $userId, time() + 3600, "/"); // Установка куки на 1 час
+        header('Location: index.html'); // Перенаправление на главную страницу
         exit();
     } else {
-        echo "ID не найден в базе данных.";
+        echo "Пользователь с таким ID уже существует!";
     }
 } else {
-    echo "ID не был предоставлен.";
+    echo "ID пользователя не передан!";
 }
 ?>
