@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Регистрация</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
     <style>
         body {
             display: flex;
@@ -11,36 +13,35 @@
             margin: 0;
             background: linear-gradient(to right, #ff7e5f, #feb47b);
             font-family: Arial, sans-serif;
-            overflow: hidden;
         }
-
         .form-container {
-            background: white;
+            background-color: #fff;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
         }
-
+        .form-container h1 {
+            margin-bottom: 20px;
+        }
         .form-container input {
-            font-size: 18px;
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
             width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
-
         .form-container button {
-            padding: 10px 20px;
-            font-size: 18px;
+            width: 100%;
+            padding: 10px;
             background-color: #ff7e5f;
             border: none;
             color: white;
-            border-radius: 5px;
+            font-size: 16px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
         }
-
         .form-container button:hover {
             background-color: #feb47b;
         }
@@ -48,10 +49,11 @@
 </head>
 <body>
     <div class="form-container">
-        <h1>Регистрация</h1>
-        <form action="register.php" method="post">
-            <input type="text" name="userId" placeholder="Введите ваш ID" required />
-            <button type="submit">Регистрация</button>
+        <h1>Register</h1>
+        <form action="https://prostoron.github.io/rpmcoinsbot/register.php" method="POST">
+            <input type="text" name="user_id" placeholder="Your User ID" required>
+            <input type="text" name="nickname" placeholder="Your Nickname" required>
+            <button type="submit">Register</button>
         </form>
     </div>
 </body>
