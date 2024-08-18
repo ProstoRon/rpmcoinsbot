@@ -55,59 +55,20 @@
                 font-size: 36px; 
             }
         }
-
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .form-container input {
-            font-size: 18px;
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .form-container button {
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #ff7e5f;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .form-container button:hover {
-            background-color: #feb47b;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <?php if (!isset($_COOKIE['userId'])): ?>
-            <div class="form-container">
-                <h1>Введите ваш ник на RPM</h1>
-                <form action="save_nickname.php" method="post">
-                    <input type="text" name="nickname" placeholder="Ваш ник" required />
-                    <button type="submit">Сохранить</button>
-                </form>
-            </div>
-        <?php else: ?>
-            <div class="button" onclick="incrementCounter()"></div>
-            <div class="counter" id="counter">0</div>
-        <?php endif; ?>
+        <div class="button" onclick="incrementCounter()"></div>
+        <div class="counter" id="counter">0</div>
     </div>
 
     <script>
         // Функция для увеличения счётчика
         function incrementCounter() {
-            const userId = '<?php echo $_COOKIE['userId']; ?>'; // ID пользователя из куки
+            const userId = '<?php echo $_COOKIE['userId'] ?? ''; ?>'; // ID пользователя из куки
 
-            fetch('save_nickname.php', {
+            fetch('update_counter.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -129,9 +90,9 @@
 
         // Функция для обновления локального счётчика
         function updateLocalCounter() {
-            const userId = '<?php echo $_COOKIE['userId']; ?>'; // ID пользователя из куки
+            const userId = '<?php echo $_COOKIE['userId'] ?? ''; ?>'; // ID пользователя из куки
 
-            fetch('save_nickname.php?userId=' + userId)
+            fetch('get_counter.php?userId=' + userId)
             .then(response => response.json())
             .then(data => {
                 document.getElementById('counter').innerText = data.totalClicks;
