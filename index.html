@@ -84,6 +84,22 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        // Проверка наличия куки
+        function checkCookie() {
+            const userId = getCookie('userId');
+            if (!userId) {
+                window.location.href = 'register.html'; // Перенаправление на страницу регистрации
+            } else {
+                updateLocalCounter();
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
         // Функция для увеличения счётчика
         window.incrementCounter = function() {
             const counterRef = ref(database, 'totalClicks');
@@ -91,10 +107,8 @@
                 return (currentValue || 0) + 1;
             }).then((result) => {
                 if (result.committed) {
-                    // Обработка результата транзакции
                     const updatedCount = result.snapshot.val();
                     document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    console.log('Counter updated:', updatedCount);
                 }
             }).catch((error) => {
                 console.error('Error updating counter:', error);
@@ -112,8 +126,8 @@
             });
         }
 
-        // Инициализация счётчика при загрузке страницы
-        document.addEventListener('DOMContentLoaded', updateLocalCounter);
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', checkCookie);
     </script>
 </body>
 </html>
