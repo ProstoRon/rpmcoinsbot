@@ -66,6 +66,11 @@
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                z-index: 1; /* Убедитесь, что сообщение поверх остальных элементов */
+            }
+
+            .container, .button, .counter {
+                display: none; /* Скрыть все элементы на больших экранах */
             }
         }
     </style>
