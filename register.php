@@ -1,40 +1,34 @@
 <?php
-session_start();
+// register.php
 
-// Подключение к Firebase
-require 'vendor/autoload.php'; // Подключение автозагрузчика Composer
+// Подключаем файл с конфигурацией Firebase
+require_once 'firebase_config.php'; // Обновите путь к вашему конфигурационному файлу
 
-use Kreait\Firebase\Factory;
-use Kreait\Firebase\ServiceAccount;
-use Kreait\Firebase\Database;
+// Получаем данные из формы
+$nickname = $_POST['nickname'] ?? '';
 
-$serviceAccount = ServiceAccount::fromJsonFile('path/to/your/serviceAccountKey.json');
-$firebase = (new Factory)
-    ->withServiceAccount($serviceAccount)
-    ->withDatabaseUri('https://rpmcoins-48e4f-default-rtdb.firebaseio.com')
-    ->create();
+if (!empty($nickname)) {
+    // Получаем ID пользователя из Telegram
+    $user_id = $_SESSION['user_id'] ?? ''; // Предполагаем, что user_id сохранен в сессии
 
-$database = $firebase->getDatabase();
+    if ($user_id) {
+        // Создаем ссылку в базе данных с уникальным идентификатором пользователя
+        $reference = "users/{$user_id}";
+        $data = [
+            'nickname' => $nickname,
+            'totalClicks' => 0 // Инициализируем клики как 0
+        ];
 
-// Генерация уникального ID пользователя
-function generateUserId() {
-    return uniqid();
-}
+        // Обновляем базу данных
+        $database->getReference($reference)->set($data);
 
-// Обработка формы регистрации
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nickname'])) {
-    $nickname = htmlspecialchars($_POST['nickname']);
-    $userId = generateUserId();
-
-    // Сохраняем никнейм и ID пользователя в Firebase
-    $database->getReference('users/' . $userId)->set([
-        'nickname' => $nickname,
-        'totalClicks' => 0
-    ]);
-
-    // Устанавливаем куки с ID пользователя
-    setcookie('userId', $userId, time() + (86400 * 30), "/"); // Куки истекает через 30 дней
-    header("Location: index.html"); // Перенаправляем на основную страницу
-    exit();
+        // Перенаправляем пользователя на главную страницу или страницу с подтверждением
+        header('Location: /');
+        exit;
+    } else {
+        echo "Ошибка: Не удалось получить ID пользователя.";
+    }
+} else {
+    echo "Ошибка: Ник не может быть пустым.";
 }
 ?>
