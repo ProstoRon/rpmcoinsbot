@@ -95,7 +95,7 @@
         function checkCookie() {
             userId = getCookie('userId');
             if (!userId) {
-                window.location.href = 'register.html';
+                window.location.href = 'login.html';
             } else {
                 updateLocalCounter();
                 displayUserInfo(userId);
@@ -109,7 +109,7 @@
         }
 
         function displayUserInfo(userId) {
-            document.getElementById('user-info').innerText = `User ID: ${userId}`;
+            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
         window.incrementCounter = function() {
