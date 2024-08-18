@@ -64,9 +64,11 @@
         <div class="counter" id="counter">0</div>
     </div>
     <!-- Подключение Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
-    <script>
+    <script type="module">
+        // Импорт SDK
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getDatabase, ref, update, onValue } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
+
         // Ваши конфигурационные данные Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -80,48 +82,30 @@
         };
 
         // Инициализация Firebase
-        let app, database;
-        try {
-            app = firebase.initializeApp(firebaseConfig);
-            database = firebase.database(app);
-            console.log('Firebase инициализирован');
-        } catch (error) {
-            console.error('Ошибка инициализации Firebase:', error);
-        }
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Функция для увеличения счётчика
         function incrementCounter() {
-            if (!database) {
-                console.error('Firebase не инициализирован');
-                return;
-            }
-            const counterRef = database.ref('totalClicks');
-            counterRef.transaction(currentValue => {
-                return (currentValue || 0) + 1;
-            }, (error, committed, snapshot) => {
-                if (error) {
-                    console.error('Transaction failed:', error);
-                } else if (!committed) {
-                    console.log('Transaction not committed');
-                } else {
-                    console.log('Transaction committed');
-                }
-                // Обновляем локальный счётчик
-                updateLocalCounter();
+            const counterRef = ref(database, 'totalClicks');
+            onValue(counterRef, (snapshot) => {
+                const currentValue = snapshot.val() || 0;
+                update(counterRef, { totalClicks: currentValue + 1 }).then(() => {
+                    // Обновляем локальный счётчик
+                    updateLocalCounter();
+                }).catch(error => {
+                    console.error('Error updating counter:', error);
+                });
             });
         }
 
         // Функция для обновления локального счётчика
         function updateLocalCounter() {
-            if (!database) {
-                console.error('Firebase не инициализирован');
-                return;
-            }
-            const counterRef = database.ref('totalClicks');
-            counterRef.once('value').then(snapshot => {
+            const counterRef = ref(database, 'totalClicks');
+            onValue(counterRef, (snapshot) => {
                 const totalClicks = snapshot.val() || 0;
                 document.getElementById('counter').innerText = totalClicks;
-            }).catch(error => {
+            }, (error) => {
                 console.error('Error reading counter:', error);
             });
         }
