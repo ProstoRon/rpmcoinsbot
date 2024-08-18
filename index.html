@@ -80,24 +80,43 @@
         };
 
         // Инициализация Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database(app);
+        let app, database;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            database = firebase.database(app);
+            console.log('Firebase инициализирован');
+        } catch (error) {
+            console.error('Ошибка инициализации Firebase:', error);
+        }
 
         // Функция для увеличения счётчика
         function incrementCounter() {
+            if (!database) {
+                console.error('Firebase не инициализирован');
+                return;
+            }
             const counterRef = database.ref('totalClicks');
             counterRef.transaction(currentValue => {
                 return (currentValue || 0) + 1;
-            }).then(() => {
+            }, (error, committed, snapshot) => {
+                if (error) {
+                    console.error('Transaction failed:', error);
+                } else if (!committed) {
+                    console.log('Transaction not committed');
+                } else {
+                    console.log('Transaction committed');
+                }
                 // Обновляем локальный счётчик
                 updateLocalCounter();
-            }).catch(error => {
-                console.error('Error updating counter:', error);
             });
         }
 
         // Функция для обновления локального счётчика
         function updateLocalCounter() {
+            if (!database) {
+                console.error('Firebase не инициализирован');
+                return;
+            }
             const counterRef = database.ref('totalClicks');
             counterRef.once('value').then(snapshot => {
                 const totalClicks = snapshot.val() || 0;
