@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration</title>
+    <title>Register</title>
     <style>
         body {
             display: flex;
@@ -11,50 +9,88 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
             font-family: Arial, sans-serif;
         }
-        .form-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 300px;
+
+        .container {
             text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .form-container h1 {
-            margin-bottom: 20px;
-        }
-        .form-container input {
+
+        .input {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
-        .form-container button {
+
+        .button {
             width: 100%;
             padding: 10px;
             background-color: #ff7e5f;
-            border: none;
             color: white;
+            border: none;
             font-size: 16px;
-            border-radius: 4px;
             cursor: pointer;
+            border-radius: 5px;
         }
-        .form-container button:hover {
+
+        .button:hover {
             background-color: #feb47b;
         }
     </style>
 </head>
 <body>
-    <div class="form-container">
+    <div class="container">
         <h1>Register</h1>
-        <form action="register.php" method="POST">
-            <input type="text" name="user_id" placeholder="Your User ID" required>
-            <input type="text" name="nickname" placeholder="Your Nickname" required>
-            <button type="submit">Register</button>
-        </form>
+        <input type="text" id="userIdInput" class="input" placeholder="Enter your ID">
+        <button class="button" onclick="register()">Register</button>
+        <div id="error-message"></div>
     </div>
+    <!-- Подключаем Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function register() {
+            const userId = document.getElementById('userIdInput').value.trim();
+            const errorMessage = document.getElementById('error-message');
+
+            if (!userId) {
+                errorMessage.textContent = 'Please enter an ID.';
+                return;
+            }
+
+            const userRef = ref(database, `users/${userId}`);
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    document.cookie = `userId=${userId}; path=/`;
+                    window.location.href = 'index.html';
+                } else {
+                    errorMessage.textContent = 'ID not found in database.';
+                }
+            }).catch((error) => {
+                console.error('Error checking ID:', error);
+            });
+        }
+    </script>
 </body>
 </html>
