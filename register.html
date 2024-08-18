@@ -48,7 +48,7 @@
     <div class="container">
         <h1>Register</h1>
         <input type="text" id="userIdInput" class="input" placeholder="Enter your ID">
-        <button class="button" onclick="register()">Register</button>
+        <button class="button" id="registerButton">Register</button>
         <div id="error-message"></div>
     </div>
     <!-- Подключаем Firebase -->
@@ -96,6 +96,9 @@
                 errorMessage.textContent = 'Error checking ID. See console for details.';
             });
         }
+
+        // Привязываем функцию к кнопке регистрации после загрузки
+        document.getElementById('registerButton').addEventListener('click', register);
     </script>
 </body>
 </html>
