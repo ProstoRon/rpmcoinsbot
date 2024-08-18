@@ -90,8 +90,10 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        let userId = null;
+
         function checkCookie() {
-            const userId = getCookie('userId');
+            userId = getCookie('userId');
             if (!userId) {
                 window.location.href = 'register.html';
             } else {
@@ -107,13 +109,14 @@
         }
 
         function displayUserInfo(userId) {
-            // Просто показываем ID пользователя
             document.getElementById('user-info').innerText = `User ID: ${userId}`;
         }
 
         window.incrementCounter = function() {
-            const counterRef = ref(database, 'totalClicks');
-            runTransaction(counterRef, (currentValue) => {
+            if (!userId) return; // Защита от нажатия до загрузки пользователя
+
+            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            runTransaction(userClicksRef, (currentValue) => {
                 return (currentValue || 0) + 1;
             }).then((result) => {
                 if (result.committed) {
@@ -126,8 +129,10 @@
         };
 
         function updateLocalCounter() {
-            const counterRef = ref(database, 'totalClicks');
-            onValue(counterRef, (snapshot) => {
+            if (!userId) return; // Защита от обновления до загрузки пользователя
+
+            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            onValue(userClicksRef, (snapshot) => {
                 const totalClicks = snapshot.val();
                 document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
             }, (error) => {
