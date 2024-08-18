@@ -10,7 +10,7 @@ $userId = $_POST['userId'] ?? null;
 
 // Проверка, что ID пользователя передан
 if ($userId) {
-    $serviceAccount = ServiceAccount::fromJsonFile(__DIR__ . '/path/to/your/firebase_config.json');
+    $serviceAccount = ServiceAccount::fromJsonFile(__DIR__ . 'firebase_config.json');
     $firebase = (new Factory)->withServiceAccount($serviceAccount)->create();
     $database = $firebase->getDatabase();
 
