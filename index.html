@@ -20,12 +20,12 @@
         }
 
         .button {
-            width: 100px;
-            height: 100px;
+            width: 150px; /* Увеличенный размер кнопки */
+            height: 150px; /* Увеличенный размер кнопки */
             border-radius: 50%;
             background: linear-gradient(to right, #4caf50, #8bc34a); /* Градиент для кнопки */
             color: white;
-            font-size: 18px;
+            font-size: 24px; /* Увеличенный размер шрифта */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -46,35 +46,10 @@
         }
 
         .counter {
-            font-size: 36px;
+            font-size: 48px; /* Увеличенный размер счётчика */
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Тень текста */
-        }
-
-        /* Показывать сообщение только на мобильных экранах */
-        @media only screen and (max-width: 768px) {
-            .container {
-                display: none; /* Скрыть контейнер на мобильных экранах */
-            }
-
-            body::after {
-                content: "Этот сайт доступен только на компьютерах.";
-                display: block;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 24px;
-                color: #333;
-                text-align: center;
-                font-weight: bold;
-                background-color: #fefefe;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                z-index: 1; /* Убедитесь, что сообщение поверх остальных элементов */
-            }
         }
     </style>
 </head>
