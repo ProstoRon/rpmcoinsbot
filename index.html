@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RPMcoinbot</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            display: block;
+            text-align: center;
+        }
+
+        .button {
+            width: 400px; 
+            height: 400px; 
+            background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+            background-size: cover; 
+            background-position: center; 
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+        }
+
+        .button:active {
+            transform: scale(0.9); 
+        }
+
+        .counter {
+            font-size: 48px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        }
+
+        @media only screen and (max-width: 768px) {
+            .button {
+                width: 200px; 
+                height: 200px; 
+            }
+
+            .counter {
+                font-size: 36px; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button" onclick="incrementCounter()"></div>
+        <div class="counter" id="counter">0</div>
+    </div>
+
+    <!-- Подключаем Firebase -->
+    <script type="module">
+        // Импортируем функции из Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+
+        // Конфигурация Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
+        };
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Функция для увеличения счётчика
+        window.incrementCounter = function() {
+            const counterRef = ref(database, 'totalClicks');
+            runTransaction(counterRef, (currentValue) => {
+                return (currentValue || 0) + 1;
+            }).then((result) => {
+                if (result.committed) {
+                    // Обработка результата транзакции
+                    const updatedCount = result.snapshot.val();
+                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                    console.log('Counter updated:', updatedCount);
+                }
+            }).catch((error) => {
+                console.error('Error updating counter:', error);
+            });
+        };
+
+        // Функция для обновления локального счётчика
+        function updateLocalCounter() {
+            const counterRef = ref(database, 'totalClicks');
+            onValue(counterRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+            }, (error) => {
+                console.error('Error reading counter:', error);
+            });
+        }
+
+        // Инициализация счётчика при загрузке страницы
+        document.addEventListener('DOMContentLoaded', updateLocalCounter);
+    </script>
+</body>
+</html>
