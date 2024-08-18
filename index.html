@@ -85,25 +85,25 @@
 
         // Функция для увеличения счётчика
         function incrementCounter() {
-            const userId = 'user_' + new Date().getTime(); // Генерация уникального ID для пользователя, можно улучшить
-            const userClicksRef = database.ref('clicks/' + userId);
-            userClicksRef.transaction(currentValue => {
+            const counterRef = database.ref('totalClicks');
+            counterRef.transaction(currentValue => {
                 return (currentValue || 0) + 1;
             }).then(() => {
                 // Обновляем локальный счётчик
                 updateLocalCounter();
+            }).catch(error => {
+                console.error('Error updating counter:', error);
             });
         }
 
         // Функция для обновления локального счётчика
         function updateLocalCounter() {
-            const counterRef = database.ref('clicks');
+            const counterRef = database.ref('totalClicks');
             counterRef.once('value').then(snapshot => {
-                let totalClicks = 0;
-                snapshot.forEach(childSnapshot => {
-                    totalClicks += childSnapshot.val() || 0;
-                });
+                const totalClicks = snapshot.val() || 0;
                 document.getElementById('counter').innerText = totalClicks;
+            }).catch(error => {
+                console.error('Error reading counter:', error);
             });
         }
 
