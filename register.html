@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - RPMcoinbot</title>
     <style>
         body {
@@ -10,62 +12,70 @@
             height: 100vh;
             margin: 0;
             background: linear-gradient(to right, #ff7e5f, #feb47b); 
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
         }
 
         .form-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             width: 90%;
             max-width: 400px;
         }
 
         .form-container h1 {
             margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 28px;
             color: #ff7e5f;
+            font-weight: 700;
         }
 
         .form-container input {
             font-size: 18px;
-            padding: 10px;
+            padding: 15px;
             margin: 10px 0;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 10px;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .form-container button {
-            padding: 10px 20px;
+            padding: 15px 20px;
             font-size: 18px;
             background-color: #ff7e5f;
             border: none;
-            color: white;
-            border-radius: 5px;
+            color: #ffffff;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
 
         .form-container button:hover {
             background-color: #feb47b;
         }
 
+        .form-container button:active {
+            transform: scale(0.98);
+        }
+
         .form-container a {
             color: #ff7e5f;
             text-decoration: none;
             font-size: 14px;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
         .form-container a:hover {
             text-decoration: underline;
         }
     </style>
+    <!-- Подключаем Google Fonts для красивого шрифта -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="form-container">
@@ -74,6 +84,7 @@
             <input type="text" name="nickname" placeholder="Ваш ник" required />
             <button type="submit">Зарегистрироваться</button>
         </form>
+        <a href="/">Вернуться на главную</a>
     </div>
 </body>
 </html>
