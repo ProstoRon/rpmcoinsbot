@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Register</title>
+    <title>Вход в систему</title>
     <style>
         body {
             display: flex;
@@ -53,8 +53,8 @@
 <body>
     <div class="container">
         <h1>Register</h1>
-        <input type="text" id="userIdInput" class="input" placeholder="Enter your ID">
-        <button class="button" id="registerButton">Register</button>
+        <input type="text" id="userIdInput" class="input" placeholder="Введите ID">
+        <button class="button" id="registerButton">Вход</button>
         <div id="error-message"></div>
     </div>
     <!-- Подключаем Firebase -->
@@ -81,24 +81,24 @@
             const errorMessage = document.getElementById('error-message');
 
             if (!userId) {
-                errorMessage.textContent = 'Please enter an ID.';
+                errorMessage.textContent = 'Пожалуйста, введите ID.';
                 return;
             }
 
-            console.log('Attempting to register user with ID:', userId);
+            console.log('Попытка зарегистрировать пользователя с ID:', userId);
 
             const userRef = ref(database, `users/${userId}`);
             get(userRef).then((snapshot) => {
                 if (snapshot.exists()) {
-                    console.log('User ID found in database.');
+                    console.log('ID Не найден в базе данных.');
                     document.cookie = `userId=${userId}; path=/`;
                     window.location.href = 'index.html';
                 } else {
-                    console.log('User ID not found in database.');
+                    console.log('ID Не найден в базе данных.');
                     errorMessage.textContent = `ID ${userId} not found in database.`;
                 }
             }).catch((error) => {
-                console.error('Error checking ID:', error);
+                console.error('Ошибка проверки:', error);
                 errorMessage.textContent = 'Error checking ID. See console for details.';
             });
         }
