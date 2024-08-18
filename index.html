@@ -107,16 +107,8 @@
         }
 
         function displayUserInfo(userId) {
-            const userRef = ref(database, `users/${userId}`);
-            onValue(userRef, (snapshot) => {
-                const user = snapshot.val();
-                if (user) {
-                    document.getElementById('user-info').innerText = `Welcome, ${user.name}`;
-                    // You can also set user avatar here if available
-                } else {
-                    document.getElementById('user-info').innerText = 'User not found';
-                }
-            });
+            // Просто показываем ID пользователя
+            document.getElementById('user-info').innerText = `User ID: ${userId}`;
         }
 
         window.incrementCounter = function() {
