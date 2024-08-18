@@ -46,16 +46,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     if ($snapshot->exists()) {
         // Запись существует, создаем аккаунт и перенаправляем
-        $userRef->getChild($nickname)->set(['totalClicks' => 0]);
-        header("Location: https://prostoron.github.io/rpmcoinsbot"); // Замените на URL вашего клика
-    } else {
-        // Запись не найдена
-        echo "ID не найдено. Пожалуйста, проверьте ваш ID.";
-    }
-} else {
-    echo "Неверный метод запроса.";
-}
-
-// Удаление временного файла после использования
-unlink($tempFile);
-?>
