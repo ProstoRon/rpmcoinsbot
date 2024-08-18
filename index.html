@@ -20,12 +20,12 @@
         }
 
         .button {
-            width: 500px; /* Увеличенный размер кнопки */
-            height: 500px; /* Увеличенный размер кнопки */
-            border-radius: 50%;
-            background: linear-gradient(to right, #4caf50, #8bc34a); /* Градиент для кнопки */
-            color: white;
-            font-size: 24px; /* Увеличенный размер шрифта */
+            width: 400px; /* Размер кнопки */
+            height: 400px; /* Размер кнопки */
+            background-image: url('https://i.imgur.com/Tdt7In2.png'); /* Установите изображение как фон */
+            background-size: cover; /* Подгоните изображение по размеру кнопки */
+            background-position: center; /* Центрируйте изображение */
+            border: none;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -41,16 +41,28 @@
         }
 
         .counter {
-            font-size: 48px; /* Увеличенный размер счётчика */
+            font-size: 48px; /* Размер счётчика */
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Тень текста */
+        }
+
+        /* Адаптивный дизайн для экранов меньше 768px */
+        @media only screen and (max-width: 768px) {
+            .button {
+                width: 200px; /* Уменьшенный размер кнопки */
+                height: 200px; /* Уменьшенный размер кнопки */
+            }
+
+            .counter {
+                font-size: 36px; /* Уменьшенный размер счётчика */
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="incrementCounter()">ЖМАТЬ НАХУ</div>
+        <div class="button" onclick="incrementCounter()"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <script>
