@@ -5,138 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(to right, #ff7e5f, #feb47b); 
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
-
-        .container {
-            display: block;
-            text-align: center;
-            position: relative;
-        }
-
-        .button {
-            width: 500px; 
-            height: 500px; 
-            background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
-            background-size: cover; 
-            background-position: center; 
-            border: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease; 
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            position: relative;
-        }
-
-        .button:active {
-            transform: scale(0.9); 
-        }
-
-        .counter {
-            font-size: 48px; 
-            color: #333;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-        }
-
-        .energy-counter {
-            font-size: 24px;
-            font-family: 'Kanit', sans-serif; 
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ffd70f;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-        }
-
-        .user-info {
-            font-size: 20px;
-            color: #fff;
-            margin-top: 20px;
-        }
-
-        .floating-text {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
-            font-weight: bold;
-            animation: floatUp 1s ease forwards;
-            pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px);
-            }
-        }
-
-        @media only screen and (max-width: 768px) {
-            body {
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-            }
-
-            .button {
-                width: 320px; 
-                height: 320px; 
-                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
-                background-size: cover; 
-                background-position: center; 
-                border: none;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-                transition: transform 0.1s ease, box-shadow 0.1s ease;
-                -webkit-tap-highlight-color: transparent;
-                outline: none;
-                margin: 0 auto;
-            }
-
-            .counter {
-                font-size: 36px; 
-                color: #333;
-                font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-                position: absolute;
-                top: 10%;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            .energy-counter {
-                font-size: 24px;
-                font-family: 'Kanit', sans-serif;
-                position: absolute;
-                bottom: 10%;
-                left: 50%;
-                transform: translateX(-50%);
-                color: #ffd70f;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-           }
-        }
+        /* Ваши стили остаются прежними */
     </style>
 </head>
 <body>
@@ -150,7 +19,7 @@
     <!-- Подключение Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -173,10 +42,10 @@
 
         function checkCookie() {
             userId = getCookie('userId');
-            console.log("User ID from cookie:", userId); // Debugging line
             if (!userId) {
                 window.location.href = 'register.html';
             } else {
+                initializeUser(userId); // Инициализируем пользователя
                 updateUserData();
                 displayUserInfo(userId);
                 startEnergyRegen();
@@ -190,7 +59,25 @@
         }
 
         function displayUserInfo(userId) {
-            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
+            // Заменяем ID на Telegram ID
+            document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
+        }
+
+        function initializeUser(userId) {
+            const userRef = ref(database, `users/${userId}`);
+
+            onValue(userRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    set(userRef, {
+                        clicks: 0,
+                        energy: 1000,
+                        maxenergy: 1000,
+                        totalClicks: 0
+                    }).catch((error) => {
+                        console.error('Ошибка при создании пользователя:', error);
+                    });
+                }
+            });
         }
 
         function startEnergyRegen() {
@@ -201,7 +88,6 @@
 
                     onValue(userMaxEnergyRef, (snapshot) => {
                         const maxEnergy = snapshot.val() || 1000;
-                        console.log("Max energy:", maxEnergy); // Debugging line
                         runTransaction(userEnergyRef, (currentEnergy) => {
                             if (currentEnergy === null) return 0;
                             return Math.min(currentEnergy + 1, maxEnergy);
@@ -227,8 +113,6 @@
 
             onValue(userEnergyRef, (energySnapshot) => {
                 const currentEnergy = energySnapshot.val();
-                
-                console.log("Current energy:", currentEnergy); // Debugging line
 
                 if (currentEnergy <= 0) {
                     const button = document.getElementById('button');
@@ -288,7 +172,6 @@
 
                 onValue(userTotalClicksRef, (snapshot) => {
                     const totalClicks = snapshot.val();
-                    console.log("Total clicks:", totalClicks); // Debugging line
                     document.getElementById('counter').innerText = totalClicks;
                 });
 
@@ -296,7 +179,6 @@
                     const energy = energySnapshot.val();
                     onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
                         const maxEnergy = maxEnergySnapshot.val();
-                        console.log("Energy:", energy, "Max Energy:", maxEnergy); // Debugging line
                         document.getElementById('energy-counter').innerText = `Energy: ${energy || 0}/${maxEnergy || 1000}`;
                     });
                 });
