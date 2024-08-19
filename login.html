@@ -17,46 +17,46 @@
         .container {
             text-align: center;
             background: white;
-            padding: 56px; /* Увеличено на 40% */
-            border-radius: 16px; /* Увеличено на 40% */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Увеличено на 40% */
-            max-width: 840px; /* Увеличено на 40% */
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
             width: 100%;
         }
 
         h1 {
-            font-size: 45px; /* Увеличено на 40% */
-            margin-bottom: 42px; /* Увеличено на 40% */
+            font-size: 24px;
+            margin-bottom: 20px;
             color: #ff7e5f;
         }
 
         .input {
-            width: calc(100% - 62px); /* Увеличено на 40% */
-            padding: 28px; /* Увеличено на 40% */
-            margin-bottom: 28px; /* Увеличено на 40% */
-            font-size: 34px; /* Увеличено на 40% */
+            width: calc(100% - 22px);
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 16px;
             border: 1px solid #ddd;
-            border-radius: 12px; /* Увеличено на 40% */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Увеличено на 40% */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             transition: box-shadow 0.3s ease;
         }
 
         .input:focus {
             border-color: #ff7e5f;
-            box-shadow: 0 8px 16px rgba(255, 126, 95, 0.2); /* Увеличено на 40% */
+            box-shadow: 0 4px 8px rgba(255, 126, 95, 0.2);
             outline: none;
         }
 
         .button {
             width: 100%;
-            padding: 28px; /* Увеличено на 40% */
+            padding: 12px;
             background-color: #ff7e5f;
             color: white;
             border: none;
-            font-size: 34px; /* Увеличено на 40% */
+            font-size: 18px;
             cursor: pointer;
-            border-radius: 12px; /* Увеличено на 40% */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Увеличено на 40% */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -66,37 +66,37 @@
 
         .button:active {
             background-color: #f4a07a;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Увеличено на 40% */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         #error-message {
             color: #d9534f;
-            font-size: 34px; /* Увеличено на 40% */
-            margin-top: 28px; /* Увеличено на 40% */
+            font-size: 16px;
+            margin-top: 15px;
         }
 
         @media only screen and (max-width: 600px) {
             .container {
-                padding: 42px; /* Увеличено на 40% */
+                padding: 20px;
             }
 
             .input {
-                font-size: 28px; /* Увеличено на 40% */
+                font-size: 14px;
             }
 
             .button {
-                font-size: 28px; /* Увеличено на 40% */
+                font-size: 16px;
             }
 
             #error-message {
-                font-size: 28px; /* Увеличено на 40% */
+                font-size: 14px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Вход</h1>
+        <h1>Register</h1>
         <input type="text" id="userIdInput" class="input" placeholder="Введите ID">
         <button class="button" id="registerButton">Вход</button>
         <div id="error-message"></div>
