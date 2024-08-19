@@ -117,16 +117,6 @@
 
         let userId = null;
 
-        function checkCookie() {
-            userId = getCookie('userId');
-            if (!userId) {
-                window.location.href = 'login.html';
-            } else {
-                updateLocalCounter();
-                displayUserInfo(userId);
-            }
-        }
-
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
