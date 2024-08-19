@@ -9,9 +9,9 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to bottom right, #4e54c8, #8f94fb); /* Фиолетово-синий градиент */
+            background: linear-gradient(to bottom right, #8e2de2, #4a00e0); /* Фиолетовый градиент */
             font-family: Arial, sans-serif;
-            color: #333;
+            color: #fff;
         }
 
         .container {
@@ -27,7 +27,7 @@
         h1 {
             font-size: 32px;
             margin-bottom: 30px;
-            color: #4e54c8;
+            color: #8e2de2;
         }
 
         .input {
@@ -42,15 +42,15 @@
         }
 
         .input:focus {
-            border-color: #4e54c8;
-            box-shadow: 0 6px 12px rgba(78, 83, 200, 0.2);
+            border-color: #8e2de2;
+            box-shadow: 0 6px 12px rgba(142, 45, 226, 0.2);
             outline: none;
         }
 
         .button {
             width: 100%;
             padding: 20px;
-            background-color: #4e54c8;
+            background-color: #8e2de2;
             color: white;
             border: none;
             font-size: 24px;
@@ -61,11 +61,11 @@
         }
 
         .button:hover {
-            background-color: #8f94fb;
+            background-color: #6f1ccf;
         }
 
         .button:active {
-            background-color: #6d6dff;
+            background-color: #5b13a3;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
@@ -73,15 +73,6 @@
             color: #d9534f;
             font-size: 24px;
             margin-top: 20px;
-        }
-
-        #error-message a {
-            color: #4e54c8;
-            text-decoration: none;
-        }
-
-        #error-message a:hover {
-            text-decoration: underline;
         }
 
         @media only screen and (max-width: 600px) {
@@ -106,15 +97,16 @@
 <body>
     <div class="container">
         <h1>Регистрация</h1>
-        <input type="text" id="usernameInput" class="input" placeholder="Введите ник">
-        <input type="password" id="passwordInput" class="input" placeholder="Придумайте пароль">
-        <button class="button" id="registerButton">Зарегистрироваться</button>
+        <input type="text" id="userIdInput" class="input" placeholder="Введите ID">
+        <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
+        <button class="button" id="registerButton">Регистрация</button>
         <div id="error-message"></div>
     </div>
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -128,70 +120,36 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const database = getDatabase(app);
 
-        function generateUniqueCode() {
-            return new Promise((resolve, reject) => {
-                const code = Math.floor(10000 + Math.random() * 90000).toString(); // Генерация пятизначного кода
-                const codeRef = ref(database, `codes/${code}`);
-                
-                get(codeRef).then((snapshot) => {
-                    if (!snapshot.exists()) {
-                        resolve(code);
-                    } else {
-                        generateUniqueCode().then(resolve).catch(reject);
-                    }
-                }).catch(reject);
-            });
-        }
-
         function register() {
-            const username = document.getElementById('usernameInput').value.trim();
+            const userId = document.getElementById('userIdInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
             const errorMessage = document.getElementById('error-message');
 
-            if (!username || !password) {
-                errorMessage.textContent = 'Пожалуйста, введите ник и пароль.';
+            if (!userId || !password) {
+                errorMessage.textContent = 'Пожалуйста, введите ID и пароль.';
                 return;
             }
 
-            const userRef = ref(database, `users/${username}`);
-            get(userRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    errorMessage.innerHTML = `Такой аккаунт уже существует. <a href="https://prostoron.github.io/rpmcoinsbot/login" target="_blank">Попробуйте войти</a>.`;
-                    return;
-                }
-
-                generateUniqueCode().then((code) => {
-                    const userData = {
-                        clicks: 1,
-                        energy: 1000,
-                        maxenergy: 1000,
-                        totalClicks: 0,
-                        password: password,
-                        id: code
-                    };
-
-                    set(userRef, userData).then(() => {
-                        const codeRef = ref(database, `codes/${code}`);
-                        set(codeRef, { userId: username }).then(() => {
-                            document.cookie = `userId=${username}; path=/`;
-                            window.location.href = 'index.html';
-                        }).catch((error) => {
-                            console.error('Ошибка записи кода:', error);
-                            errorMessage.textContent = 'Ошибка при записи кода. Попробуйте позже.';
-                        });
-                    }).catch((error) => {
-                        console.error('Ошибка записи пользователя:', error);
-                        errorMessage.textContent = 'Ошибка при записи пользователя. Попробуйте позже.';
-                    });
-                }).catch((error) => {
-                    console.error('Ошибка генерации кода:', error);
-                    errorMessage.textContent = 'Ошибка при генерации кода. Попробуйте позже.';
-                });
+            // Проверка существующего пользователя
+            const userRef = ref(database, `users/${userId}`);
+            set(userRef, {
+                clicks: 1,
+                energy: 1000,
+                maxenergy: 1000,
+                totalClicks: 0,
+                password: password,
+                id: userId
+            }).then(() => {
+                return createUserWithEmailAndPassword(auth, userId, password);
+            }).then((userCredential) => {
+                console.log('User registered:', userCredential.user.uid);
+                window.location.href = 'index.html';
             }).catch((error) => {
-                console.error('Ошибка проверки существующего аккаунта:', error);
-                errorMessage.textContent = 'Ошибка при проверке существующего аккаунта. Попробуйте позже.';
+                console.error('Error registering user:', error);
+                errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
             });
         }
 
