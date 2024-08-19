@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>RPMcoinbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             display: flex;
@@ -67,50 +68,14 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="handleClick()"></div>
+        <div class="button" id="vibrate-button" onclick="handleClick()"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
+
     <!-- Подключаем Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        let userId = null;
-
-        function checkCookie() {
-            userId = getCookie('userId');
-            if (!userId) {
-                window.location.href = 'login.html';
-            } else {
-                updateLocalCounter();
-                displayUserInfo(userId);
-            }
-        }
-
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        function displayUserInfo(userId) {
-            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
-        }
+        // ... Firebase code ...
 
         function handleClick() {
             // Вибрация на 50 миллисекунд
@@ -120,46 +85,7 @@
             incrementCounter();
         }
 
-        window.incrementCounter = function() {
-            if (!userId) return; // Защита от нажатия до загрузки пользователя
-
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            runTransaction(userClicksRef, (currentValue) => {
-                return (currentValue || 0) + 1;
-            }).then((result) => {
-                if (result.committed) {
-                    const updatedCount = result.snapshot.val();
-                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                }
-            }).catch((error) => {
-                console.error('Error updating counter:', error);
-            });
-        };
-
-        function updateLocalCounter() {
-            if (!userId) return; // Защита от обновления до загрузки пользователя
-
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            onValue(userClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', checkCookie);
-        function deleteCookie(name) {
-            document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        }
-
-        function deleteAllCookies() {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].split('=');
-                deleteCookie(cookie[0].trim());
-            }
-        }
+        // ... остальной код ...
     </script>
 </body>
 </html>
