@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>RPMcoinbot</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RPMcoinbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
             display: flex;
@@ -22,8 +24,8 @@
         }
 
         .button {
-            width: 400px; 
-            height: 400px; 
+            width: 500px; 
+            height: 500px; 
             background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
             background-size: cover; 
             background-position: center; 
@@ -36,7 +38,7 @@
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
+            position: relative;
         }
 
         .button:active {
@@ -50,13 +52,32 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
         }
 
+        .energy-counter {
+            font-size: 24px;
+            font-family: 'Kanit', sans-serif; 
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd70f;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-info {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 20px;
+        }
+
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none; /* Исключает взаимодействие с этим текстом */
+            pointer-events: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         @keyframes floatUp {
@@ -70,36 +91,67 @@
             }
         }
 
-        .user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            font-size: 18px;
-            color: #333;
-        }
-
         @media only screen and (max-width: 768px) {
+            body {
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+
             .button {
-                width: 200px; 
-                height: 200px; 
+                width: 320px; 
+                height: 320px; 
+                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+                background-size: cover; 
+                background-position: center; 
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                margin: 0 auto;
             }
 
             .counter {
                 font-size: 36px; 
+                color: #333;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+                position: absolute;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
             }
+
+            .energy-counter {
+                font-size: 24px;
+                font-family: 'Kanit', sans-serif;
+                position: absolute;
+                bottom: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #ffd70f;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+           }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="incrementCounter(event)"></div>
+        <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
+        <div class="energy-counter" id="energy-counter">0/1000</div>
     </div>
     <div class="user-info" id="user-info"></div>
-    <!-- Подключаем Firebase -->
+
+    <!-- Подключение Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -115,82 +167,86 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let userId = null;
-
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
         }
 
         function displayUserInfo(userId) {
-            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
+            document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
         }
 
-        window.incrementCounter = function(event) {
-            if (!userId) return;
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            runTransaction(userClicksRef, (currentValue) => {
-                return (currentValue || 0) + 1;
-            }).then((result) => {
-                if (result.committed) {
-                    const updatedCount = result.snapshot.val();
-                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(event, updatedCount);
+        function initializeUser(userId) {
+            const userRef = ref(database, `users/${userId}`);
+            onValue(userRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    set(userRef, {
+                        clicks: 1,
+                        energy: 1000,
+                        maxenergy: 1000,
+                        totalClicks: 0,
+                        user_id: userId
+                    }).catch((error) => {
+                        console.error('Ошибка при создании пользователя:', error);
+                    });
+                } else {
+                    console.log('Пользователь уже существует');
                 }
             }).catch((error) => {
-                console.error('Error updating counter:', error);
+                console.error('Ошибка при чтении данных пользователя:', error);
             });
-        };
+        }
 
-        function updateLocalCounter() {
+        function startEnergyRegen(userId) {
+            setInterval(() => {
+                if (userId) {
+                    const userEnergyRef = ref(database, `users/${userId}/energy`);
+                    const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
+
+                    onValue(userMaxEnergyRef, (snapshot) => {
+                        const maxEnergy = snapshot.val() || 1000;
+                        runTransaction(userEnergyRef, (currentEnergy) => {
+                            if (currentEnergy === null) return 0;
+                            return Math.min(currentEnergy + 1, maxEnergy);
+                        }).catch((error) => {
+                            console.error('Ошибка при восстановлении энергии:', error);
+                        });
+                    });
+                }
+            }, 2000);
+        }
+
+        function incrementCounter() {
+            const userId = getQueryParam('user_id');
             if (!userId) return;
 
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            onValue(userClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-        }
-        function showFloatingText(event, text) {
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.innerText = ref(database, `users/${userId}/${clicks}`);
+            const currentTime = Date.now();
+            if (!lastClickTime || (currentTime - lastClickTime < 100)) return;
 
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
+            lastClickTime = currentTime;
 
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            event.target.appendChild(floatingText);
+            onValue(userEnergyRef, (energySnapshot) => {
+                const currentEnergy = energySnapshot.val();
 
-            // Удаление элемента после завершения анимации
-            floatingText.addEventListener('animationend', () => {
-                floatingText.remove();
-            });
-        }
+                if (currentEnergy <= 0) {
+                    const button = document.getElementById('button');
+                    button.classList.add('disabled');
+                    setTimeout(() => button.classList.remove('disabled'), 1000);
+                    return;
+                }
 
-        document.addEventListener('DOMContentLoaded', checkCookie);
-        function deleteCookie(name) {
-            document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        }
-
-        function deleteAllCookies() {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].split('=');
-                deleteCookie(cookie[0].trim());
-            }
-        }
-    </script>
-</body>
-</html>
+                runTransaction(userEnergyRef, (energy) => {
+                    if (energy === null) return 0;
+                    if (energy <= 0) return energy;
+                    return energy - 1;
+                }).then((energyResult) => {
+                    if (energyResult.committed) {
+                        runTransaction(userClicksRef, (currentClicks) => {
+                            return (currentClicks || 0) + 1;
+                        }).then(() => {
+                            runTransaction(userTotalClicksRef, (currentTotalClicks) => {
+                                return (current
