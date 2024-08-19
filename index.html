@@ -185,7 +185,7 @@
             if (!userId) {
                 window.location.href = 'register.html';
             } else {
-                updateLocalCounter();
+                updateUserData();
                 displayUserInfo(userId);
                 startEnergyRegen();
             }
@@ -229,7 +229,6 @@
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userClicksRef = ref(database, `users/${userId}/clicks`);
             const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
 
             onValue(userEnergyRef, (energySnapshot) => {
                 const currentEnergy = energySnapshot.val();
@@ -255,7 +254,7 @@
                         if (energyResult.committed) {
                             // Энергия успешно уменьшена, теперь обновляем клики
                             runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                                return (currentTotalClicks || 0) + clicks;
+                                return (currentTotalClicks || 0) + (clicks || 1);
                             }).then((totalClicksResult) => {
                                 if (totalClicksResult.committed) {
                                     const updatedCount = totalClicksResult.snapshot.val();
@@ -286,7 +285,7 @@
             }, 1000);
         }
 
-        function updateLocalCounter() {
+        function updateUserData() {
             if (userId) {
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
@@ -301,7 +300,7 @@
                     const energy = energySnapshot.val();
                     onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
                         const maxEnergy = maxEnergySnapshot.val();
-                        document.getElementById('energy-counter').innerText = `Energy: ${energy}/${maxEnergy}`;
+                        document.getElementById('energy-counter').innerText = `Energy: ${energy || 0}/${maxEnergy || 1000}`;
                     });
                 });
             }
