@@ -186,16 +186,13 @@
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
 
-                    onValue(userEnergyRef, (energySnapshot) => {
-                        let currentEnergy = energySnapshot.val() || 0;
+                    runTransaction(userEnergyRef, (currentEnergy) => {
+                        const energy = currentEnergy || 0;
 
-                        onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
-                            let maxEnergy = maxEnergySnapshot.val() || 1000;
-
-                            if (currentEnergy < maxEnergy) {
-                                set(userEnergyRef, currentEnergy + 1);
-                            }
-                        });
+                        return onValue(userMaxEnergyRef, (snapshot) => {
+                            const maxEnergy = snapshot.val() || 1000;
+                            return energy < maxEnergy ? energy + 1 : energy;
+                        }, { onlyOnce: true });
                     });
                 }
             }, energyRegenInterval);
@@ -208,21 +205,18 @@
             lastClickTime = currentTime;
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
-            onValue(userEnergyRef, (snapshot) => {
-                let currentEnergy = snapshot.val() || 0;
+            runTransaction(userEnergyRef, (currentEnergy) => {
+                const energy = currentEnergy || 0;
 
-                if (currentEnergy <= 0) {
+                if (energy <= 0) {
                     // Не позволяет кликать, если энергии нет
-                    return;
+                    return energy;
                 }
 
                 // Уменьшить энергию на 1
-                set(userEnergyRef, currentEnergy - 1);
-
-                if ("vibrate" in navigator) {
-                    navigator.vibrate(50); // Вибрация на 50 миллисекунд
-                }
-
+                return energy - 1;
+            }).then(() => {
+                // Клик прошел успешно, теперь обновляем клики
                 const userClicksRef = ref(database, `users/${userId}/clicks`);
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
@@ -240,7 +234,9 @@
                     }).catch((error) => {
                         console.error('Error updating counter:', error);
                     });
-                });
+                }, { onlyOnce: true });
+            }).catch((error) => {
+                console.error('Error updating energy:', error);
             });
         };
 
@@ -284,36 +280,6 @@
                 floatingText.remove();
             });
         }
-
-        function applyButtonTilt(event) {
-            const button = document.getElementById('button');
-            const buttonRect = button.getBoundingClientRect();
-            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
-
-            const mouseX = event.clientX;
-            const mouseY = event.clientY;
-
-            const deltaX = mouseX - buttonCenterX;
-            const deltaY = mouseY - buttonCenterY;
-
-            const maxTilt = 30;
-
-            const tiltX = (deltaY / buttonRect.height) * maxTilt;
-            const tiltY = (deltaX / buttonRect.width) * maxTilt;
-
-            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-        }
-
-        function resetButtonTilt() {
-            const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        }
-
-        document.addEventListener('mousemove', applyButtonTilt);
-        document.addEventListener('mouseleave', resetButtonTilt);
-        document.addEventListener('touchmove', applyButtonTilt);
-        document.addEventListener('touchend', resetButtonTilt);
 
         document.addEventListener('DOMContentLoaded', checkCookie);
 
