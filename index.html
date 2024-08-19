@@ -121,6 +121,8 @@
         const database = getDatabase(app);
 
         let userId = null;
+        let lastClickTime = 0;
+        const clickInterval = 100; // Интервал между кликами в миллисекундах
 
         function checkCookie() {
             userId = getCookie('userId');
@@ -143,7 +145,10 @@
         }
 
         window.incrementCounter = function(event) {
-            if (!userId) return;
+            const currentTime = Date.now();
+            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
+
+            lastClickTime = currentTime;
 
             if ("vibrate" in navigator) {
                 navigator.vibrate(50); // Вибрация на 50 миллисекунд
