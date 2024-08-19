@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Регистрация</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             display: flex;
@@ -30,10 +31,15 @@
             color: #8e2de2;
         }
 
-        .input {
+        .input-container {
+            position: relative;
             width: calc(100% - 44px);
-            padding: 20px;
             margin-bottom: 20px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 20px;
             font-size: 24px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -45,6 +51,16 @@
             border-color: #8e2de2;
             box-shadow: 0 6px 12px rgba(142, 45, 226, 0.2);
             outline: none;
+        }
+
+        .password-eye {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 24px;
+            color: #8e2de2;
         }
 
         .button {
@@ -97,8 +113,13 @@
 <body>
     <div class="container">
         <h1>Регистрация</h1>
-        <input type="text" id="userIdInput" class="input" placeholder="Введите ник">
-        <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
+        <input type="text" id="userIdInput" class="input" placeholder="Введите никнейм" required>
+        
+        <div class="input-container">
+            <input type="password" id="passwordInput" class="input" placeholder="Введите пароль" required>
+            <i class="fas fa-eye password-eye" id="togglePassword"></i>
+        </div>
+        
         <button class="button" id="registerButton">Регистрация</button>
         <div id="error-message"></div>
     </div>
@@ -106,7 +127,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -123,37 +144,71 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        function register() {
-            const userId = document.getElementById('userIdInput').value.trim();
+        function generateRandomId(length = 5) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            const charactersLength = characters.length;
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
+
+        async function register() {
+            const nickname = document.getElementById('userIdInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
             const errorMessage = document.getElementById('error-message');
 
-            if (!userId || !password) {
-                errorMessage.textContent = 'Пожалуйста, введите ID и пароль.';
+            if (!nickname || !password) {
+                errorMessage.textContent = 'Пожалуйста, введите никнейм и пароль.';
                 return;
             }
 
-            // Проверка существующего пользователя
-            const userRef = ref(database, `users/${userId}`);
-            set(userRef, {
-                clicks: 1,
-                energy: 1000,
-                maxenergy: 1000,
-                totalClicks: 0,
-                password: password,
-                id: userId
-            }).then(() => {
-                return createUserWithEmailAndPassword(auth, userId, password);
-            }).then((userCredential) => {
-                console.log('User registered:', userCredential.user.uid);
+            const userId = generateRandomId();
+
+            try {
+                // Проверка существующего пользователя
+                const userRef = ref(database, `users/${nickname}`);
+                const snapshot = await get(userRef);
+
+                if (snapshot.exists()) {
+                    errorMessage.textContent = 'Пользователь с таким никнеймом уже существует.';
+                    return;
+                }
+
+                // Регистрация пользователя с email в качестве никнейма
+                await createUserWithEmailAndPassword(auth, `${userId}@example.com`, password);
+
+                // Сохранение данных в базе данных
+                await set(userRef, {
+                    id: userId,
+                    clicks: 1,
+                    energy: 1000,
+                    maxenergy: 1000,
+                    totalClicks: 0,
+                    password: password,
+                    nickname: nickname
+                });
+
+                console.log('User registered:', nickname);
                 window.location.href = 'index.html';
-            }).catch((error) => {
+            } catch (error) {
                 console.error('Error registering user:', error);
                 errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
-            });
+            }
         }
 
         document.getElementById('registerButton').addEventListener('click', register);
+
+        // Переключение видимости пароля
+        const passwordInput = document.getElementById('passwordInput');
+        const togglePassword = document.getElementById('togglePassword');
+
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            togglePassword.classList.toggle('fa-eye-slash');
+        });
     </script>
 </body>
 </html>
