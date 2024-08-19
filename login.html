@@ -118,14 +118,12 @@
     <div class="container">
         <h1>Вход в систему</h1>
         <div class="input-container">
-            <input type="text" id="userIdInput" class="input" placeholder="Введите ник" required>
+            <input type="text" id="userIdInput" class="input" placeholder="Введите никнейм">
         </div>
-        
         <div class="input-container password">
-            <input type="password" id="passwordInput" class="input" placeholder="Введите пароль" required>
+            <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
             <i class="fas fa-eye password-eye" id="togglePassword"></i>
         </div>
-        
         <button class="button" id="loginButton">Войти</button>
         <div id="error-message"></div>
     </div>
@@ -133,22 +131,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
+            // Ваши настройки
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const database = getDatabase(app);
 
         function login() {
             const nickname = document.getElementById('userIdInput').value.trim();
@@ -160,22 +149,18 @@
                 return;
             }
 
-            // Сформируем email для Firebase
             const email = `${nickname}@example.com`;
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    console.log('Вход выполнен успешно:', userCredential);
                     document.cookie = `userId=${nickname}; path=/`;
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    console.error('Ошибка входа:', error);
                     errorMessage.textContent = `Ошибка входа: ${error.message}`;
                 });
         }
 
-        // Переключение видимости пароля
         const passwordInput = document.getElementById('passwordInput');
         const togglePassword = document.getElementById('togglePassword');
 
