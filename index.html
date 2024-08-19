@@ -166,6 +166,9 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        function displayUserInfo(userId) {
+    document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
+}
 
         function getCookie(name) {
             const value = `; ${document.cookie}`;
