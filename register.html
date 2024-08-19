@@ -168,7 +168,7 @@
             try {
                 const snapshot = await get(userRef);
                 if (snapshot.exists()) {
-                    errorMessage.textContent = 'Учётная запись с таким никнеймом уже существует.<a href="https://prostoron.github.io/rpmcoinsbot/login.html"> Войти</a>';
+                    errorMessage.innerHTML = 'Учётная запись с таким никнеймом уже существует.<a href="https://prostoron.github.io/rpmcoinsbot/login.html"> Войти</a>';
                     return;
                 }
 
