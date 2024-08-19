@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPMcoinbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             display: flex;
@@ -35,7 +34,7 @@
             align-items: center;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
             outline: none;
             position: relative;
@@ -44,14 +43,14 @@
         }
 
         .button:active {
-            transform: scale(0.9);
+            transform: scale(0.9); 
         }
 
         .counter {
             font-size: 48px; 
             color: #333;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
         }
 
         .floating-text {
@@ -60,9 +59,9 @@
             font-size: 28px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none;
+            pointer-events: none; /* Исключает взаимодействие с этим текстом */
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
         }
 
         @keyframes floatUp {
@@ -112,23 +111,16 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" id="button"></div>
+        <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
     </div>
-    <div class="user-info" id="user-info">
-        <p id="user-id"></p>
-        <p id="clicks"></p>
-        <p id="energy"></p>
-        <p id="total-clicks"></p>
-    </div>
+    <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
-
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
             authDomain: "rpmcoins-48e4f.firebaseapp.com",
@@ -140,65 +132,44 @@
             measurementId: "G-S2PRPR80F5"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Function to get URL parameter
+        let userId = null;
+        let lastClickTime = 0;
+        const clickInterval = 1000; // Интервал между кликами в миллисекундах
+
         function getParameterByName(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // Fetch user data from Firebase
-        async function fetchUserData(userId) {
-            const userRef = ref(database, `users/${userId}`);
-            try {
-                const snapshot = await get(userRef);
-                if (snapshot.exists()) {
-                    return snapshot.val();
-                } else {
-                    throw new Error('User not found');
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                return null;
-            }
+        function updateLocalCounter() {
+            if (!userId) return;
+
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+            }, (error) => {
+                console.error('Error reading counter:', error);
+            });
         }
 
-        // Display user data on the page
-        async function displayUserData() {
-            const userId = getParameterByName('source');
-            if (userId) {
-                const userData = await fetchUserData(userId);
-                if (userData) {
-                    document.getElementById('user-id').innerText = `User ID: ${userData.user_id}`;
-                    document.getElementById('clicks').innerText = `Clicks: ${userData.clicks}`;
-                    document.getElementById('energy').innerText = `Energy: ${userData.energy}`;
-                    document.getElementById('total-clicks').innerText = `Total Clicks: ${userData.totalClicks}`;
-                } else {
-                    document.getElementById('user-info').innerText = 'User not found.';
-                }
-            } else {
-                document.getElementById('user-info').innerText = 'No user ID provided.';
-            }
-        }
-
-        // Increment totalClicks on button click
         window.incrementCounter = async function(event) {
-            const userId = getParameterByName('source');
             if (!userId) return;
 
             const currentTime = Date.now();
-            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
+            if (currentTime - lastClickTime < clickInterval) return;
 
             lastClickTime = currentTime;
 
             if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Vibration for 50 milliseconds
+                navigator.vibrate(50); // Вибрация на 50 миллисекунд
             }
 
             const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
             try {
                 await runTransaction(userTotalClicksRef, (currentValue) => {
                     return (currentValue || 0) + 1;
@@ -228,9 +199,28 @@
 
             event.target.appendChild(floatingText);
 
+            // Удаление элемента после завершения анимации
             floatingText.addEventListener('animationend', () => {
                 floatingText.remove();
             });
+        }
+
+        function displayUserData() {
+            userId = getParameterByName('source');
+            if (userId) {
+                const userRef = ref(database, `users/${userId}`);
+                onValue(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
+                        updateLocalCounter();
+                    } else {
+                        document.getElementById('user-info').innerText = 'User not found.';
+                    }
+                });
+            } else {
+                document.getElementById('user-info').innerText = 'No user ID provided.';
+            }
         }
 
         function applyButtonTilt(event) {
@@ -248,28 +238,34 @@
             const maxTilt = 30;
 
             const tiltX = (deltaY / buttonRect.height) * maxTilt;
-            const tiltY = (-deltaX / buttonRect.width) * maxTilt;
+            const tiltY = (deltaX / buttonRect.width) * maxTilt;
 
             button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
         }
 
         function resetButtonTilt() {
             const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0) rotateY(0)';
+            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }
 
-        // Initialize
-        let lastClickTime = 0;
-        const clickInterval = 1000; // 1 second
+        function handleMouseDown(event) {
+            applyButtonTilt(event);
+            document.addEventListener('mousemove', applyButtonTilt);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function handleMouseUp() {
+            resetButtonTilt();
+            document.removeEventListener('mousemove', applyButtonTilt);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        function init() {
+            document.getElementById('button').addEventListener('mousedown', handleMouseDown);
             displayUserData();
-            const button = document.getElementById('button');
-            button.addEventListener('mousedown', incrementCounter);
-            button.addEventListener('mousemove', applyButtonTilt);
-            button.addEventListener('mouseleave', resetButtonTilt);
-            button.addEventListener('mouseup', resetButtonTilt);
-        });
+        }
+
+        init();
     </script>
 </body>
 </html>
