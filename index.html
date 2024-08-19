@@ -146,7 +146,6 @@ body {
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
    }
 }
-
     </style>
 </head>
 <body>
@@ -157,8 +156,24 @@ body {
     </div>
     <div class="user-info" id="user-info"></div>
 
-    <script>
-        // Вставьте сюда ваш JavaScript код
+    <!-- Подключение Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         let userId = null;
         const energyRegenInterval = 2000; // Интервал восстановления энергии в миллисекундах
