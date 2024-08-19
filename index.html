@@ -46,6 +46,7 @@
             perspective: 1000px;
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             background-color: rgba(255, 255, 255, 0); /* Полупрозрачный фон */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .button:active {
@@ -95,10 +96,12 @@
         <button id="button" class="button"></button>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
-    <script>
-        // Firebase configuration
+    <script type="module">
+        // Импорт необходимых функций из Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
+        import { getDatabase, ref, onValue, update, set, transaction } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js';
+
+        // Конфигурация Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
             authDomain: "rpmcoins-48e4f.firebaseapp.com",
@@ -110,9 +113,9 @@
             measurementId: "G-S2PRPR80F5"
         };
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database(app);
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         let userId = null;
         let lastClickTime = 0;
@@ -126,8 +129,8 @@
         function updateLocalCounter() {
             if (!userId) return;
 
-            const userTotalClicksRef = database.ref(`users/${userId}/totalClicks`);
-            userTotalClicksRef.on('value', (snapshot) => {
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            onValue(userTotalClicksRef, (snapshot) => {
                 const totalClicks = snapshot.val();
                 document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
             }, (error) => {
@@ -160,8 +163,8 @@
         function displayUserData() {
             userId = getParameterByName('source');
             if (userId) {
-                const userRef = database.ref(`users/${userId}`);
-                userRef.on('value', (snapshot) => {
+                const userRef = ref(database, `users/${userId}`);
+                onValue(userRef, (snapshot) => {
                     const userData = snapshot.val();
                     if (userData) {
                         document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
@@ -187,13 +190,13 @@
                 navigator.vibrate(50); // Вибрация на 50 миллисекунд
             }
 
-            const userClicksRef = database.ref(`users/${userId}/clicks`);
-            const userTotalClicksRef = database.ref(`users/${userId}/totalClicks`);
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            userClicksRef.transaction((clicks) => {
+            transaction(userClicksRef, (clicks) => {
                 return (clicks || 0) + 1;
             }).then(() => {
-                userTotalClicksRef.transaction((totalClicks) => {
+                transaction(userTotalClicksRef, (totalClicks) => {
                     return (totalClicks || 0) + 1;
                 }).then(() => {
                     updateLocalCounter();
