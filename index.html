@@ -208,7 +208,8 @@
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             runTransaction(userEnergyRef, (currentEnergy) => {
                 if (currentEnergy === null || currentEnergy <= 0) {
-                    return currentEnergy; // Если энергии нет, клики не засчитываются
+                    // Если энергии нет, клики не засчитываются
+                    return currentEnergy;
                 }
 
                 // Уменьшение энергии на 1
