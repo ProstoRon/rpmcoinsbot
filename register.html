@@ -50,7 +50,7 @@
         .password-eye {
             position: absolute;
             top: 50%;
-            right: 10px;
+            right: 16px; /* Смещаем на 6px вправо */
             transform: translateY(-50%);
             cursor: pointer;
             font-size: 24px;
@@ -101,20 +101,6 @@
             #error-message {
                 font-size: 20px;
             }
-        }
-        .input-container {
-            position: relative;
-        }
-        .password-eye {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #888;
-        }
-        .password-eye.fa-eye-slash {
-            color: #555;
         }
     </style>
 </head>
@@ -178,9 +164,11 @@
                 }
 
                 const email = `${nickname}@example.com`;
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid; // Получаем UID пользователя
 
-                await createUserWithEmailAndPassword(auth, email, password);
                 await set(userRef, {
+                    user_id: uid,
                     clicks: 0,
                     energy: 1000,
                     maxenergy: 1000,
