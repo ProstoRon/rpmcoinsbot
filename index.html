@@ -222,7 +222,7 @@
             const deltaX = mouseX - buttonCenterX;
             const deltaY = mouseY - buttonCenterY;
 
-            const maxTilt = 15; // Максимальный угол наклона в градусах
+            const maxTilt = 30; // Увеличенный максимальный угол наклона в градусах
             const tiltX = (deltaY / buttonRect.height) * maxTilt;
             const tiltY = (-deltaX / buttonRect.width) * maxTilt;
 
