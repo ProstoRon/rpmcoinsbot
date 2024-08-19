@@ -13,7 +13,7 @@
             background: linear-gradient(to right, #ff7e5f, #feb47b); 
             font-family: Arial, sans-serif;
             overflow: hidden;
-            position: relative; /* Чтобы позиционировать изображение в углу */
+            position: relative;
         }
 
         .container {
@@ -23,34 +23,34 @@
         }
 
         .button {
-            width: 500px; 
-            height: 500px; 
-            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-            background-size: cover; 
-            background-position: center; 
+            width: 500px;
+            height: 500px;
+            background-image: url('https://i.imgur.com/5Yn6qnN.png');
+            background-size: cover;
+            background-position: center;
             border: none;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
-            transform-style: preserve-3d; /* Для 3D эффектов */
-            perspective: 1000px; /* Для задания перспективы */
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
 
         .button:active {
-            transform: scale(0.9); 
+            transform: scale(0.9);
         }
 
         .counter {
-            font-size: 48px; 
+            font-size: 48px;
             color: #333;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .energy-counter {
@@ -70,9 +70,9 @@
             font-size: 28px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none; /* Исключает взаимодействие с этим текстом */
+            pointer-events: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         @keyframes floatUp {
@@ -98,22 +98,22 @@
             position: absolute;
             top: 2px;
             left: 2px;
-            width: 60px; /* Задайте размер изображения по вашему усмотрению */
+            width: 60px;
             height: 60px;
-            border-radius: 50%; /* Радиус округления углов */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Тень для изображения */
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             object-fit: cover;
         }
 
         @media only screen and (max-width: 768px) {
             .button {
-                width: 320px; 
-                height: 320px; 
+                width: 320px;
+                height: 320px;
                 bottom: -200px;
             }
-            
+
             .counter {
-                font-size: 36px; 
+                font-size: 36px;
                 position: absolute;
                 bottom: 300px;
             }
@@ -274,7 +274,6 @@
 
             event.target.appendChild(floatingText);
 
-            // Удаление элемента после завершения анимации
             floatingText.addEventListener('animationend', () => {
                 floatingText.remove();
             });
@@ -292,7 +291,7 @@
             const deltaX = mouseX - buttonCenterX;
             const deltaY = mouseY - buttonCenterY;
 
-            const maxTilt = 30; // Максимальный угол наклона
+            const maxTilt = 30;
 
             const tiltX = (deltaY / buttonRect.height) * maxTilt;
             const tiltY = (deltaX / buttonRect.width) * maxTilt;
