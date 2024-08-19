@@ -4,7 +4,7 @@
     <title>Вход в систему</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
+body {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -112,6 +112,20 @@
                 font-size: 20px;
             }
         }
+        .input-container {
+            position: relative;
+        }
+        .password-eye {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+        }
+        .password-eye.fa-eye-slash {
+            color: #555;
+        }
     </style>
 </head>
 <body>
@@ -133,7 +147,14 @@
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
 
         const firebaseConfig = {
-            // Ваши настройки
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
         };
 
         const app = initializeApp(firebaseConfig);
