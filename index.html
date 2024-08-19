@@ -155,9 +155,9 @@
         const database = getDatabase(app);
 
         let userId = null;
-        let lastClickTime = 0;
-        const clickInterval = 100; // Интервал между кликами в миллисекундах
         const energyRegenInterval = 4000; // Интервал восстановления энергии в миллисекундах
+        const clickInterval = 100; // Интервал между кликами в миллисекундах
+        let lastClickTime = 0;
 
         function checkCookie() {
             userId = getCookie('userId');
@@ -187,12 +187,14 @@
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
 
                     runTransaction(userEnergyRef, (currentEnergy) => {
-                        const energy = currentEnergy || 0;
+                        if (currentEnergy === null) return 0;
 
                         return onValue(userMaxEnergyRef, (snapshot) => {
                             const maxEnergy = snapshot.val() || 1000;
-                            return energy < maxEnergy ? energy + 1 : energy;
+                            return currentEnergy < maxEnergy ? currentEnergy + 1 : currentEnergy;
                         }, { onlyOnce: true });
+                    }).catch((error) => {
+                        console.error('Ошибка при восстановлении энергии:', error);
                     });
                 }
             }, energyRegenInterval);
@@ -206,37 +208,36 @@
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             runTransaction(userEnergyRef, (currentEnergy) => {
-                const energy = currentEnergy || 0;
-
-                if (energy <= 0) {
-                    // Не позволяет кликать, если энергии нет
-                    return energy;
+                if (currentEnergy === null || currentEnergy <= 0) {
+                    return currentEnergy; // Если энергии нет, клики не засчитываются
                 }
 
-                // Уменьшить энергию на 1
-                return energy - 1;
-            }).then(() => {
-                // Клик прошел успешно, теперь обновляем клики
-                const userClicksRef = ref(database, `users/${userId}/clicks`);
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                // Уменьшение энергии на 1
+                return currentEnergy - 1;
+            }).then((result) => {
+                if (result.committed) {
+                    // Энергия успешно уменьшена, теперь обновляем клики
+                    const userClicksRef = ref(database, `users/${userId}/clicks`);
+                    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-                onValue(userClicksRef, (snapshot) => {
-                    const clicks = snapshot.val() || 1; // Значение clicks из базы данных
+                    onValue(userClicksRef, (snapshot) => {
+                        const clicks = snapshot.val() || 1;
 
-                    runTransaction(userTotalClicksRef, (currentValue) => {
-                        return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
-                    }).then((result) => {
-                        if (result.committed) {
-                            const updatedCount = result.snapshot.val();
-                            document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                            showFloatingText(event, clicks);
-                        }
-                    }).catch((error) => {
-                        console.error('Error updating counter:', error);
-                    });
-                }, { onlyOnce: true });
+                        runTransaction(userTotalClicksRef, (currentTotalClicks) => {
+                            return (currentTotalClicks || 0) + clicks;
+                        }).then((result) => {
+                            if (result.committed) {
+                                const updatedCount = result.snapshot.val();
+                                document.getElementById('counter').innerText = updatedCount;
+                                showFloatingText(event, clicks);
+                            }
+                        }).catch((error) => {
+                            console.error('Ошибка при обновлении счетчика кликов:', error);
+                        });
+                    }, { onlyOnce: true });
+                }
             }).catch((error) => {
-                console.error('Error updating energy:', error);
+                console.error('Ошибка при списании энергии:', error);
             });
         };
 
@@ -248,7 +249,7 @@
                 const totalClicks = snapshot.val();
                 document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
             }, (error) => {
-                console.error('Error reading counter:', error);
+                console.error('Ошибка при чтении данных:', error);
             });
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
@@ -256,7 +257,7 @@
                 const energy = snapshot.val();
                 document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}`;
             }, (error) => {
-                console.error('Error reading energy:', error);
+                console.error('Ошибка при чтении энергии:', error);
             });
         }
 
