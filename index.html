@@ -36,7 +36,7 @@
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
+            position: relative;
         }
 
         .button:active {
@@ -56,7 +56,7 @@
             font-size: 24px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none; /* Исключает взаимодействие с этим текстом */
+            pointer-events: none;
         }
 
         @keyframes floatUp {
@@ -144,14 +144,14 @@
                 navigator.vibrate(50); // Вибрация на 50 миллисекунд
             }
 
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
             runTransaction(userClicksRef, (currentValue) => {
                 return (currentValue || 0) + 1;
             }).then((result) => {
                 if (result.committed) {
-                    const updatedCount = result.snapshot.val();
-                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(event, updatedCount);
+                    const updatedClicks = result.snapshot.val();
+                    document.getElementById('counter').innerText = updatedClicks !== null ? updatedClicks : 0;
+                    showFloatingText(event, updatedClicks);
                 }
             }).catch((error) => {
                 console.error('Error updating counter:', error);
@@ -161,16 +161,16 @@
         function updateLocalCounter() {
             if (!userId) return;
 
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
             onValue(userClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+                const clicks = snapshot.val();
+                document.getElementById('counter').innerText = clicks !== null ? clicks : 0;
             }, (error) => {
                 console.error('Error reading counter:', error);
             });
         }
 
-        function showFloatingText(event, text) {
+        function showFloatingText(event, clicks) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.innerText = `+${clicks}`;
@@ -184,7 +184,6 @@
 
             event.target.appendChild(floatingText);
 
-            // Удаление элемента после завершения анимации
             floatingText.addEventListener('animationend', () => {
                 floatingText.remove();
             });
