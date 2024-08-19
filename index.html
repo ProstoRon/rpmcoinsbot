@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Interactive Page</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #6a0dad, #a63dbf);
+            font-family: Arial, sans-serif;
         }
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
             text-align: center;
-            margin-bottom: 20px;
+            color: #fff;
         }
-        .stat {
-            margin-bottom: 15px;
+        .button {
+            background: url('https://i.imgur.com/dtJW1Wu.png') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 200px;
+            border: none;
+            cursor: pointer;
         }
-        .stat span {
-            font-weight: bold;
+        .counter {
+            margin-top: 20px;
+            font-size: 24px;
         }
     </style>
     <!-- Firebase App (the core Firebase SDK) -->
@@ -36,32 +38,23 @@
 </head>
 <body>
     <div class="container">
-        <h1>User Dashboard</h1>
-        <div class="stat">
-            <span>Total Clicks:</span> <span id="totalClicks">Loading...</span>
-        </div>
-        <div class="stat">
-            <span>Energy:</span> <span id="energy">Loading...</span>
-        </div>
-        <div class="stat">
-            <span>Max Energy:</span> <span id="maxEnergy">Loading...</span>
-        </div>
-        <div class="stat">
-            <span>Clicks:</span> <span id="clicks">Loading...</span>
+        <button class="button" id="clickButton"></button>
+        <div class="counter">
+            Total Clicks: <span id="totalClicks">Loading...</span>
         </div>
     </div>
 
     <script>
-        // TODO: Replace the following config object with your Firebase project's configuration
+        // Firebase configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID",
-            measurementId: "YOUR_MEASUREMENT_ID"
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
         };
 
         // Initialize Firebase
@@ -70,30 +63,38 @@
         // Reference to the database
         const db = firebase.database();
 
-        // Function to fetch and display user data
-        function displayUserData(userId) {
-            db.ref('users/' + userId).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById('totalClicks').textContent = data.totalClicks || '0';
-                    document.getElementById('energy').textContent = data.energy || '0';
-                    document.getElementById('maxEnergy').textContent = data.maxenergy || '0';
-                    document.getElementById('clicks').textContent = data.clicks || '0';
-                } else {
-                    document.getElementById('totalClicks').textContent = 'No data';
-                    document.getElementById('energy').textContent = 'No data';
-                    document.getElementById('maxEnergy').textContent = 'No data';
-                    document.getElementById('clicks').textContent = 'No data';
-                }
-            });
-        }
-
         // Get userId from URL parameter or use a default value
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('userId') || 'defaultUserId';  // Replace 'defaultUserId' with an appropriate default value
 
-        // Display user data
-        displayUserData(userId);
+        // Function to fetch and display user data
+        function displayUserData() {
+            db.ref('users/' + userId).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById('totalClicks').textContent = data.totalClicks || '0';
+                } else {
+                    document.getElementById('totalClicks').textContent = '0';
+                }
+            });
+        }
+
+        // Function to increment click count
+        function incrementClickCount() {
+            const userRef = db.ref('users/' + userId);
+            userRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                const newTotalClicks = (data.totalClicks || 0) + 1;
+                userRef.update({ totalClicks: newTotalClicks });
+                document.getElementById('totalClicks').textContent = newTotalClicks;
+            });
+        }
+
+        // Initialize page
+        displayUserData();
+
+        // Add event listener to button
+        document.getElementById('clickButton').addEventListener('click', incrementClickCount);
     </script>
 </body>
 </html>
