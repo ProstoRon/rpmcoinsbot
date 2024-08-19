@@ -40,18 +40,6 @@
         const clickInterval = 100; // Интервал кликов
         let lastClickTime = 0;
 
-        function checkCookie() {
-            userId = getCookie('userId');
-            if (!userId) {
-                window.location.href = 'register.html';
-            } else {
-                initializeUser(userId); // Инициализируем пользователя
-                updateUserData();
-                displayUserInfo(userId);
-                startEnergyRegen();
-            }
-        }
-
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -98,8 +86,6 @@
                 }
             }, energyRegenInterval);
         }
-
-        window.addEventListener('click', incrementCounter);
 
         function incrementCounter(event) {
             const currentTime = Date.now();
@@ -148,44 +134,4 @@
                 }).catch((error) => {
                     console.error('Ошибка при списании энергии:', error);
                 });
-            }, { onlyOnce: true });
-        }
-
-        function showFloatingText(event, amount) {
-            const floatingText = document.createElement('div');
-            floatingText.classList.add('floating-text');
-            floatingText.innerText = `+${amount}`;
-            floatingText.style.left = `${event.clientX}px`;
-            floatingText.style.top = `${event.clientY}px`;
-            document.body.appendChild(floatingText);
-
-            setTimeout(() => {
-                floatingText.remove();
-            }, 1000);
-        }
-
-        function updateUserData() {
-            if (userId) {
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const userEnergyRef = ref(database, `users/${userId}/energy`);
-                const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
-
-                onValue(userTotalClicksRef, (snapshot) => {
-                    const totalClicks = snapshot.val();
-                    document.getElementById('counter').innerText = totalClicks;
-                });
-
-                onValue(userEnergyRef, (energySnapshot) => {
-                    const energy = energySnapshot.val();
-                    onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
-                        const maxEnergy = maxEnergySnapshot.val();
-                        document.getElementById('energy-counter').innerText = `Energy: ${energy || 0}/${maxEnergy || 1000}`;
-                    });
-                });
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", checkCookie);
-    </script>
-</body>
-</html>
+            }, { onlyOnce: true
