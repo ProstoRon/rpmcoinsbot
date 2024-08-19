@@ -278,7 +278,7 @@
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
-                document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}`;
+                document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}/${maxEnergy !== null ? energy : 1000}`;
             }, (error) => {
                 console.error('Ошибка при чтении энергии:', error);
             });
