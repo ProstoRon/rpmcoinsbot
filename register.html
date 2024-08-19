@@ -75,6 +75,15 @@
             margin-top: 20px;
         }
 
+        #error-message a {
+            color: #4e54c8;
+            text-decoration: none;
+        }
+
+        #error-message a:hover {
+            text-decoration: underline;
+        }
+
         @media only screen and (max-width: 600px) {
             .container {
                 padding: 30px;
@@ -146,33 +155,43 @@
                 return;
             }
 
-            generateUniqueCode().then((code) => {
-                const userRef = ref(database, `users/${username}`);
-                const userData = {
-                    clicks: 1,
-                    energy: 1000,
-                    maxenergy: 1000,
-                    totalClicks: 0,
-                    password: password,
-                    id: code
-                };
+            const userRef = ref(database, `users/${username}`);
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    errorMessage.innerHTML = `Такой аккаунт уже существует. <a href="https://prostoron.github.io/rpmcoinsbot/login" target="_blank">Попробуйте войти</a>.`;
+                    return;
+                }
 
-                set(userRef, userData).then(() => {
-                    const codeRef = ref(database, `codes/${code}`);
-                    set(codeRef, { userId: username }).then(() => {
-                        document.cookie = `userId=${username}; path=/`;
-                        window.location.href = 'index.html';
+                generateUniqueCode().then((code) => {
+                    const userData = {
+                        clicks: 1,
+                        energy: 1000,
+                        maxenergy: 1000,
+                        totalClicks: 0,
+                        password: password,
+                        id: code
+                    };
+
+                    set(userRef, userData).then(() => {
+                        const codeRef = ref(database, `codes/${code}`);
+                        set(codeRef, { userId: username }).then(() => {
+                            document.cookie = `userId=${username}; path=/`;
+                            window.location.href = 'index.html';
+                        }).catch((error) => {
+                            console.error('Ошибка записи кода:', error);
+                            errorMessage.textContent = 'Ошибка при записи кода. Попробуйте позже.';
+                        });
                     }).catch((error) => {
-                        console.error('Ошибка записи кода:', error);
-                        errorMessage.textContent = 'Ошибка при записи кода. Подробности в консоли.';
+                        console.error('Ошибка записи пользователя:', error);
+                        errorMessage.textContent = 'Ошибка при записи пользователя. Попробуйте позже.';
                     });
                 }).catch((error) => {
-                    console.error('Ошибка записи пользователя:', error);
-                    errorMessage.textContent = 'Ошибка при записи пользователя. Подробности в консоли.';
+                    console.error('Ошибка генерации кода:', error);
+                    errorMessage.textContent = 'Ошибка при генерации кода. Попробуйте позже.';
                 });
             }).catch((error) => {
-                console.error('Ошибка генерации кода:', error);
-                errorMessage.textContent = 'Ошибка при генерации кода. Подробности в консоли.';
+                console.error('Ошибка проверки существующего аккаунта:', error);
+                errorMessage.textContent = 'Ошибка при проверке существующего аккаунта. Попробуйте позже.';
             });
         }
 
