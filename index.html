@@ -132,33 +132,19 @@
                 transform: translateX(-50%);
             }
         }
+
     </style>
 </head>
 <body>
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">Energy: 0/0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0/1000</div>
     </div>
     <div class="user-info" id="user-info"></div>
-    <!-- Подключаем Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+    <script>
+        // Вставьте сюда ваш JavaScript код
 
         let userId = null;
         const energyRegenInterval = 2000; // Интервал восстановления энергии в миллисекундах
@@ -268,61 +254,27 @@
 
             const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
             onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Ошибка при чтении данных:', error);
-            });
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
-                    const maxEnergy = maxEnergySnapshot.val() || 1000;
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}/${maxEnergy}`;
-                }, (error) => {
-                    console.error('Ошибка при чтении максимальной энергии:', error);
-                });
-            }, (error) => {
-                console.error('Ошибка при чтении энергии:', error);
-            });
+                const totalClicks = snapshot.val() || 0;
+                document.getElementById('counter').innerText = totalClicks;
+            }, { onlyOnce: true });
         }
 
         function showFloatingText(event, clicks) {
-            if (!userId) return;
-
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.innerText = `+${clicks}`;
+            document.body.appendChild(floatingText);
 
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
+            const rect = event.target.getBoundingClientRect();
+            floatingText.style.left = `${rect.left + rect.width / 2 - floatingText.offsetWidth / 2}px`;
+            floatingText.style.top = `${rect.top + rect.height / 2 - floatingText.offsetHeight / 2}px`;
 
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-
-            event.target.appendChild(floatingText);
-
-            floatingText.addEventListener('animationend', () => {
+            setTimeout(() => {
                 floatingText.remove();
-            });
+            }, 1000);
         }
 
-        document.addEventListener('DOMContentLoaded', checkCookie);
-
-        function deleteCookie(name) {
-            document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        }
-
-        function deleteAllCookies() {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].split('=');
-                deleteCookie(cookie[0].trim());
-            }
-        }
+        checkCookie();
     </script>
 </body>
 </html>
