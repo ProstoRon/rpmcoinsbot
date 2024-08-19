@@ -4,7 +4,7 @@
     <title>Регистрация</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-body {
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -136,7 +136,7 @@ body {
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -153,7 +153,7 @@ body {
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        function register() {
+        async function register() {
             const nickname = document.getElementById('userIdInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
             const errorMessage = document.getElementById('error-message');
@@ -163,29 +163,30 @@ body {
                 return;
             }
 
-            const email = `${nickname}@example.com`;
+            const userRef = ref(database, `users/${nickname}`);
+            
+            try {
+                const snapshot = await get(userRef);
+                if (snapshot.exists()) {
+                    errorMessage.textContent = 'Учётная запись с таким никнеймом уже существует.';
+                    return;
+                }
 
-            createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    const userId = userCredential.user.uid;
-                    console.log(`User registered: ${userId}`);
-                    set(ref(database, `users/${nickname}`), {
-                        clicks: 0,
-                        energy: 1000,
-                        maxenergy: 1000,
-                        totalClicks: 0,
-                        password: password
-                    })
-                    .then(() => {
-                        window.location.href = 'index.html';
-                    })
-                    .catch((error) => {
-                        errorMessage.textContent = `Ошибка записи данных в базу данных: ${error.message}`;
-                    });
-                })
-                .catch((error) => {
-                    errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
+                const email = `${nickname}@example.com`;
+
+                await createUserWithEmailAndPassword(auth, email, password);
+                await set(userRef, {
+                    clicks: 0,
+                    energy: 1000,
+                    maxenergy: 1000,
+                    totalClicks: 0,
+                    password: password
                 });
+
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
+            }
         }
 
         const passwordInput = document.getElementById('passwordInput');
