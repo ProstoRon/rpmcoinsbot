@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html>
+
 <head>
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -22,8 +21,8 @@
         }
 
         .button {
-            width: 600px; 
-            height: 600px; 
+            width: 400px; 
+            height: 400px; 
             background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
             background-size: cover; 
             background-position: center; 
@@ -169,11 +168,21 @@
                 console.error('Error reading counter:', error);
             });
         }
+        function updateLocalClicks() {
+            if (!userId) return;
 
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            onValue(userClickssRef, (snapshot) => {
+                const clicks = snapshot.val();
+                document.getElementById('number').innerText = clicks !== null ? clicks : 0;
+            }, (error) => {
+                console.error('Error reading counter:', error);
+            });
+        }
         function showFloatingText(event, text) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+${text}`;
+            floatingText.innerText = `+${clicks}`;
 
             const buttonRect = event.target.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
