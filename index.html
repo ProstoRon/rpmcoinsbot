@@ -14,7 +14,6 @@
             font-family: Arial, sans-serif;
             overflow: hidden;
             position: center;
-            background-image: url('https://i.imgur.com/A4TLyQD.png');
         }
 
         .container {
@@ -119,6 +118,7 @@
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
     </div>
+    <button class="button" onclick="triggerVibration()">Vibrate</button>
     <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
     <!-- Подключаем Firebase -->
@@ -242,6 +242,14 @@
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }
 
+        function triggerVibration() {
+            if ("vibrate" in navigator) {
+                // Вибрация на 200 миллисекунд
+                navigator.vibrate(200);
+            } else {
+                alert("Vibration API is not supported on this device.");
+            }
+        
         function handleMouseDown(event) {
             applyButtonTilt(event);
             document.addEventListener('mousemove', applyButtonTilt);
