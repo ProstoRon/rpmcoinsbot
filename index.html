@@ -37,6 +37,8 @@
             -webkit-tap-highlight-color: transparent;
             outline: none;
             position: relative; /* Для позиционирования всплывающего текста */
+            transform-style: preserve-3d; /* Для 3D эффектов */
+            perspective: 1000px; /* Для задания перспективы */
         }
 
         .button:active {
@@ -217,9 +219,14 @@
             const mouseX = event.clientX;
             const mouseY = event.clientY;
 
-            const angle = Math.atan2(mouseY - buttonCenterY, mouseX - buttonCenterX) * 180 / Math.PI;
+            const deltaX = mouseX - buttonCenterX;
+            const deltaY = mouseY - buttonCenterY;
 
-            button.style.transform = `rotate(${angle}deg)`;
+            const maxTilt = 15; // Максимальный угол наклона в градусах
+            const tiltX = (deltaY / buttonRect.height) * maxTilt;
+            const tiltY = (-deltaX / buttonRect.width) * maxTilt;
+
+            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
         }
 
         document.addEventListener('mousemove', applyButtonTilt);
