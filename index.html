@@ -5,7 +5,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Ваши стили остаются прежними */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            display: block;
+            text-align: center;
+            position: relative;
+        }
+
+        .button {
+            width: 500px; 
+            height: 500px; 
+            background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+            background-size: cover; 
+            background-position: center; 
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+        }
+
+        .button:active {
+            transform: scale(0.9); 
+        }
+
+        .counter {
+            font-size: 48px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        }
+
+        .energy-counter {
+            font-size: 24px;
+            font-family: 'Kanit', sans-serif; 
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd70f;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-info {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 20px;
+        }
+
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 28px;
+            font-weight: bold;
+            animation: floatUp 1s ease forwards;
+            pointer-events: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        @media only screen and (max-width: 768px) {
+            body {
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+
+            .button {
+                width: 320px; 
+                height: 320px; 
+                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+                background-size: cover; 
+                background-position: center; 
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                margin: 0 auto;
+            }
+
+            .counter {
+                font-size: 36px; 
+                color: #333;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+                position: absolute;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .energy-counter {
+                font-size: 24px;
+                font-family: 'Kanit', sans-serif;
+                position: absolute;
+                bottom: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #ffd70f;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+           }
+        }
     </style>
 </head>
 <body>
@@ -19,7 +150,7 @@
     <!-- Подключение Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -35,25 +166,14 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let userId = null;
-        const energyRegenInterval = 2000; // Интервал восстановления энергии
-        const clickInterval = 100; // Интервал кликов
-        let lastClickTime = 0;
-
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        function displayUserInfo(userId) {
-            // Заменяем ID на Telegram ID
-            document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
-        }
-
         function initializeUser(userId) {
             const userRef = ref(database, `users/${userId}`);
-
             onValue(userRef, (snapshot) => {
                 if (!snapshot.exists()) {
                     set(userRef, {
@@ -68,91 +188,7 @@
             });
         }
 
-        function startEnergyRegen() {
-            setInterval(() => {
-                if (userId) {
-                    const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
-
-                    onValue(userMaxEnergyRef, (snapshot) => {
-                        const maxEnergy = snapshot.val() || 1000;
-                        runTransaction(userEnergyRef, (currentEnergy) => {
-                            if (currentEnergy === null) return 0;
-                            return Math.min(currentEnergy + 1, maxEnergy);
-                        }).catch((error) => {
-                            console.error('Ошибка при восстановлении энергии:', error);
-                        });
-                    });
-                }
-            }, energyRegenInterval);
-        }
-
-        window.addEventListener('click', incrementCounter);
-
-        function incrementCounter(event) {
-            const currentTime = Date.now();
-            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
-
-            lastClickTime = currentTime;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-            onValue(userEnergyRef, (energySnapshot) => {
-                const currentEnergy = energySnapshot.val();
-
-                if (currentEnergy <= 0) {
-                    const button = document.getElementById('button');
-                    button.classList.add('disabled');
-                    setTimeout(() => button.classList.remove('disabled'), 1000);
-                    return;
-                }
-
-                runTransaction(userEnergyRef, (energy) => {
-                    if (energy === null) return 0;
-                    if (energy <= 0) return energy;
-                    return energy - 1;
-                }).then((energyResult) => {
-                    if (energyResult.committed) {
-                        runTransaction(userClicksRef, (currentClicks) => {
-                            return (currentClicks || 0) + 1;
-                        }).then(() => {
-                            runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                                return (currentTotalClicks || 0) + 1;
-                            }).then((totalClicksResult) => {
-                                if (totalClicksResult.committed) {
-                                    const updatedCount = totalClicksResult.snapshot.val();
-                                    document.getElementById('counter').innerText = updatedCount;
-                                    showFloatingText(event, 1);
-                                }
-                            }).catch((error) => {
-                                console.error('Ошибка при обновлении счетчика кликов:', error);
-                            });
-                        }).catch((error) => {
-                            console.error('Ошибка при обновлении кликов:', error);
-                        });
-                    }
-                }).catch((error) => {
-                    console.error('Ошибка при списании энергии:', error);
-                });
-            }, { onlyOnce: true });
-        }
-
-        function showFloatingText(event, amount) {
-            const floatingText = document.createElement('div');
-            floatingText.classList.add('floating-text');
-            floatingText.innerText = `+${amount}`;
-            floatingText.style.left = `${event.clientX}px`;
-            floatingText.style.top = `${event.clientY}px`;
-            document.body.appendChild(floatingText);
-
-            setTimeout(() => {
-                floatingText.remove();
-            }, 1000);
-        }
-
-        function updateUserData() {
+        function updateUserData(userId) {
             if (userId) {
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
@@ -160,7 +196,7 @@
 
                 onValue(userTotalClicksRef, (snapshot) => {
                     const totalClicks = snapshot.val();
-                    document.getElementById('counter').innerText = totalClicks;
+                    document.getElementById('counter').innerText = totalClicks || 0;
                 });
 
                 onValue(userEnergyRef, (energySnapshot) => {
@@ -173,7 +209,23 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", checkCookie);
+        function displayUserInfo(userId) {
+            // Заменяем ID на Telegram ID
+            document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
+        }
+
+        function initializePage() {
+            const userId = getCookie('user_id');
+            if (userId) {
+                displayUserInfo(userId);
+                initializeUser(userId);
+                updateUserData(userId);
+            } else {
+                console.error('User ID not found in cookie.');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", initializePage);
     </script>
 </body>
 </html>
