@@ -57,7 +57,6 @@
             font-weight: bold;
             animation: floatUp 1s ease forwards;
             pointer-events: none;
-            white-space: nowrap;
         }
 
         @keyframes floatUp {
@@ -100,7 +99,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -159,7 +158,7 @@
             }
 
             const userClicksRef = ref(database, `users/${userId}/clicks`);
-
+            
             onValue(userClicksRef, (snapshot) => {
                 const clicks = snapshot.val();
                 const floatingText = document.createElement('div');
@@ -182,18 +181,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', checkCookie);
-
-        function deleteCookie(name) {
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        }
-
-        function deleteAllCookies() {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].split('=');
-                deleteCookie(cookie[0].trim());
-            }
-        }
     </script>
 </body>
 </html>
