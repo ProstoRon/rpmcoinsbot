@@ -32,6 +32,7 @@
             position: relative; /* Для позиционирования всплывающего текста */
             transform-style: preserve-3d; /* Для 3D эффектов */
             perspective: 1000px; /* Для задания перспективы */
+            touch-action: manipulation; /* Улучшение касаний на мобильных устройствах */
         }
 
         .button:active {
@@ -91,18 +92,22 @@
         const counterElement = document.getElementById('counter');
 
         // Функция для обновления счетчика в базе данных
-        async function updateDatabaseCounter() {
-            const response = await fetch('/update_counter', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userId: 'your_user_id_here', clicks: 1 })
-            });
-            if (response.ok) {
-                console.log('Counter updated successfully');
-            } else {
-                console.error('Error updating counter');
+        async function updateDatabaseCounter(userId, clicks) {
+            try {
+                const response = await fetch('/update_counter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId: userId, clicks: clicks })
+                });
+                if (response.ok) {
+                    console.log('Counter updated successfully');
+                } else {
+                    console.error('Error updating counter');
+                }
+            } catch (error) {
+                console.error('Network error:', error);
             }
         }
 
@@ -110,7 +115,7 @@
         button.addEventListener('click', (event) => {
             updateCounter();
             showFloatingText(event, 1);
-            updateDatabaseCounter();
+            updateDatabaseCounter('your_user_id_here', 1);
         });
 
         // Обработка касаний на мобильных устройствах
@@ -120,7 +125,7 @@
                 showFloatingText(touch, 1);
             }
             updateCounter();
-            updateDatabaseCounter();
+            updateDatabaseCounter('your_user_id_here', 1);
         });
 
         // Функция для обновления счетчика на экране
