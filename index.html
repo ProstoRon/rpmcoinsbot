@@ -53,6 +53,17 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
         }
 
+        .energy-counter {
+            font-size: 36px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
@@ -106,6 +117,13 @@
                 position: absolute;
                 bottom: 300px;
             }
+
+            .energy-counter {
+                font-size: 24px;
+                top: 5px;
+                left: 5px;
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -113,6 +131,7 @@
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
     <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
@@ -138,7 +157,8 @@
         let userId = null;
         let lastClickTime = 0;
         const clickInterval = 100; // Интервал между кликами в миллисекундах
-        const energyReplenishInterval = 4000; // Интервал восполнения энергии в миллисекундах
+        const energyRegenInterval = 4000; // Интервал восстановления энергии в миллисекундах
+        const maxEnergy = 1000; // Максимальная энергия
 
         function checkCookie() {
             userId = getCookie('userId');
@@ -147,7 +167,7 @@
             } else {
                 updateLocalCounter();
                 displayUserInfo(userId);
-                startEnergyReplenish();
+                startEnergyRegen();
             }
         }
 
@@ -161,18 +181,18 @@
             document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
-        function startEnergyReplenish() {
-            setInterval(async () => {
+        function startEnergyRegen() {
+            setInterval(() => {
                 if (userId) {
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    onValue(userEnergyRef, async (snapshot) => {
-                        const currentEnergy = snapshot.val() || 0;
-                        if (currentEnergy < 1000) { // max energy
-                            await set(userEnergyRef, Math.min(currentEnergy + 1, 1000)); // Восполняем энергию
+                    onValue(userEnergyRef, (snapshot) => {
+                        let currentEnergy = snapshot.val() || 0;
+                        if (currentEnergy < maxEnergy) {
+                            set(userEnergyRef, Math.min(currentEnergy + 1, maxEnergy));
                         }
                     });
                 }
-            }, energyReplenishInterval);
+            }, energyRegenInterval);
         }
 
         window.incrementCounter = function(event) {
@@ -181,42 +201,40 @@
 
             lastClickTime = currentTime;
 
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
             const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
             onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val() || 0;
+                let currentEnergy = snapshot.val() || 0;
 
-                if (energy > 0) {
-                    runTransaction(userEnergyRef, (currentValue) => {
-                        return (currentValue || 0) - 1; // Уменьшаем энергию на 1
+                if (currentEnergy <= 0) {
+                    // Не позволяет кликать, если энергии нет
+                    return;
+                }
+
+                // Уменьшить энергию на 1
+                set(userEnergyRef, currentEnergy - 1);
+
+                if ("vibrate" in navigator) {
+                    navigator.vibrate(50); // Вибрация на 50 миллисекунд
+                }
+
+                const userClicksRef = ref(database, `users/${userId}/clicks`);
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+                onValue(userClicksRef, (snapshot) => {
+                    const clicks = snapshot.val() || 1; // Значение clicks из базы данных
+
+                    runTransaction(userTotalClicksRef, (currentValue) => {
+                        return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
                     }).then((result) => {
                         if (result.committed) {
-                            onValue(userClicksRef, (snapshot) => {
-                                const clicks = snapshot.val() || 1; // Значение clicks из базы данных
-
-                                runTransaction(userTotalClicksRef, (currentValue) => {
-                                    return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
-                                }).then((result) => {
-                                    if (result.committed) {
-                                        const updatedCount = result.snapshot.val();
-                                        document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                                        showFloatingText(event, clicks);
-                                    }
-                                }).catch((error) => {
-                                    console.error('Error updating counter:', error);
-                                });
-                            });
+                            const updatedCount = result.snapshot.val();
+                            document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                            showFloatingText(event, clicks);
                         }
                     }).catch((error) => {
-                        console.error('Error updating energy:', error);
+                        console.error('Error updating counter:', error);
                     });
-                }
+                });
             });
         };
 
@@ -229,6 +247,14 @@
                 document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
             }, (error) => {
                 console.error('Error reading counter:', error);
+            });
+
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val();
+                document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}`;
+            }, (error) => {
+                console.error('Error reading energy:', error);
             });
         }
 
@@ -279,32 +305,10 @@
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }
 
-        function handleMouseDown(event) {
-            applyButtonTilt(event);
-            document.addEventListener('mousemove', applyButtonTilt);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        function handleMouseUp() {
-            resetButtonTilt();
-            document.removeEventListener('mousemove', applyButtonTilt);
-            document.removeEventListener('mouseup', handleMouseUp);
-        }
-
-        function handleTouchStart(event) {
-            applyButtonTilt(event.touches[0]);
-            document.addEventListener('touchmove', applyButtonTilt);
-            document.addEventListener('touchend', handleTouchEnd);
-        }
-
-        function handleTouchEnd() {
-            resetButtonTilt();
-            document.removeEventListener('touchmove', applyButtonTilt);
-            document.removeEventListener('touchend', handleTouchEnd);
-        }
-
-        document.getElementById('button').addEventListener('mousedown', handleMouseDown);
-        document.getElementById('button').addEventListener('touchstart', handleTouchStart);
+        document.addEventListener('mousemove', applyButtonTilt);
+        document.addEventListener('mouseleave', resetButtonTilt);
+        document.addEventListener('touchmove', applyButtonTilt);
+        document.addEventListener('touchend', resetButtonTilt);
 
         document.addEventListener('DOMContentLoaded', checkCookie);
 
