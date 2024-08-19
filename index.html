@@ -90,15 +90,25 @@
         const counterElement = document.getElementById('counter');
 
         // Обработчик события клика на кнопку
-        button.addEventListener('click', () => {
-            // Логика для обновления счетчика
-            // Например, увеличиваем значение счетчика на 1
-            const currentCount = parseInt(counterElement.innerText, 10);
-            counterElement.innerText = currentCount + 1;
-
-            // Пример функции для отображения анимации всплывающего текста
+        button.addEventListener('click', (event) => {
+            updateCounter();
             showFloatingText(event, 1);
         });
+
+        // Обработка касаний на мобильных устройствах
+        button.addEventListener('touchstart', (event) => {
+            event.preventDefault(); // Предотвращение прокрутки страницы при касании
+            for (let touch of event.touches) {
+                showFloatingText(touch, 1);
+            }
+            updateCounter();
+        });
+
+        // Функция для обновления счетчика
+        function updateCounter() {
+            const currentCount = parseInt(counterElement.innerText, 10);
+            counterElement.innerText = currentCount + 1;
+        }
 
         // Функция для отображения всплывающего текста
         function showFloatingText(event, clicks) {
