@@ -9,9 +9,9 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to bottom right, #6a1b9a, #8e24aa); 
+            background: linear-gradient(to bottom right, #4e54c8, #8f94fb); /* Фиолетово-синий градиент */
             font-family: Arial, sans-serif;
-            color: #fff;
+            color: #333;
         }
 
         .container {
@@ -27,7 +27,7 @@
         h1 {
             font-size: 32px;
             margin-bottom: 30px;
-            color: #6a1b9a;
+            color: #4e54c8;
         }
 
         .input {
@@ -42,15 +42,15 @@
         }
 
         .input:focus {
-            border-color: #6a1b9a;
-            box-shadow: 0 6px 12px rgba(106, 27, 154, 0.2);
+            border-color: #4e54c8;
+            box-shadow: 0 6px 12px rgba(78, 83, 200, 0.2);
             outline: none;
         }
 
         .button {
             width: 100%;
             padding: 20px;
-            background-color: #6a1b9a;
+            background-color: #4e54c8;
             color: white;
             border: none;
             font-size: 24px;
@@ -61,11 +61,11 @@
         }
 
         .button:hover {
-            background-color: #8e24aa;
+            background-color: #8f94fb;
         }
 
         .button:active {
-            background-color: #7b1fa2;
+            background-color: #6d6dff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
@@ -97,17 +97,15 @@
 <body>
     <div class="container">
         <h1>Регистрация</h1>
-        <input type="email" id="emailInput" class="input" placeholder="Введите Email">
-        <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
-        <button class="button" id="registerButton">Регистрация</button>
+        <input type="text" id="usernameInput" class="input" placeholder="Введите ник">
+        <input type="password" id="passwordInput" class="input" placeholder="Придумайте пароль">
+        <button class="button" id="registerButton">Зарегистрироваться</button>
         <div id="error-message"></div>
     </div>
-
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -122,64 +120,62 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        const auth = getAuth(app);
 
-        async function generateUniqueCode() {
-            const codesRef = ref(database, 'codes');
-            let code;
-            let exists = true;
-
-            while (exists) {
-                code = Math.floor(Math.random() * 90000) + 10000; // Генерация 5-значного кода
-                const codeSnapshot = await get(ref(database, `codes/${code}`));
-                exists = codeSnapshot.exists();
-            }
-
-            return code;
+        function generateUniqueCode() {
+            return new Promise((resolve, reject) => {
+                const code = Math.floor(10000 + Math.random() * 90000).toString(); // Генерация пятизначного кода
+                const codeRef = ref(database, `codes/${code}`);
+                
+                get(codeRef).then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        resolve(code);
+                    } else {
+                        generateUniqueCode().then(resolve).catch(reject);
+                    }
+                }).catch(reject);
+            });
         }
 
-        async function register() {
-            const email = document.getElementById('emailInput').value.trim();
+        function register() {
+            const username = document.getElementById('usernameInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
             const errorMessage = document.getElementById('error-message');
 
-            if (!email || !password) {
-                errorMessage.textContent = 'Пожалуйста, заполните все поля.';
+            if (!username || !password) {
+                errorMessage.textContent = 'Пожалуйста, введите ник и пароль.';
                 return;
             }
 
-            try {
-                // Создание пользователя с помощью Firebase Authentication
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const userId = userCredential.user.uid;
-
-                // Генерация уникального кода
-                const uniqueCode = await generateUniqueCode();
-
-                // Запись данных в базу
-                const userRef = ref(database, `users/${userId}`);
-                await set(userRef, {
+            generateUniqueCode().then((code) => {
+                const userRef = ref(database, `users/${username}`);
+                const userData = {
                     clicks: 1,
                     energy: 1000,
                     maxenergy: 1000,
                     totalClicks: 0,
-                    password: password
+                    password: password,
+                    id: code
+                };
+
+                set(userRef, userData).then(() => {
+                    const codeRef = ref(database, `codes/${code}`);
+                    set(codeRef, { userId: username }).then(() => {
+                        document.cookie = `userId=${username}; path=/`;
+                        window.location.href = 'index.html';
+                    }).catch((error) => {
+                        console.error('Ошибка записи кода:', error);
+                        errorMessage.textContent = 'Ошибка при записи кода. Подробности в консоли.';
+                    });
+                }).catch((error) => {
+                    console.error('Ошибка записи пользователя:', error);
+                    errorMessage.textContent = 'Ошибка при записи пользователя. Подробности в консоли.';
                 });
-
-                // Запись кода
-                const codeRef = ref(database, `codes/${uniqueCode}`);
-                await set(codeRef, { id: userId });
-
-                // Установка cookie и перенаправление
-                document.cookie = `userId=${userId}; path=/`;
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Ошибка регистрации:', error);
-                errorMessage.textContent = 'Ошибка при регистрации. Подробности в консоли.';
-            }
+            }).catch((error) => {
+                console.error('Ошибка генерации кода:', error);
+                errorMessage.textContent = 'Ошибка при генерации кода. Подробности в консоли.';
+            });
         }
 
-        // Привязываем функцию к кнопке регистрации после загрузки
         document.getElementById('registerButton').addEventListener('click', register);
     </script>
 </body>
