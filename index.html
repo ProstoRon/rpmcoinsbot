@@ -166,9 +166,6 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        function displayUserInfo(userId) {
-    document.getElementById('user-info').innerText = `Ваш Telegram ID: ${userId}`;
-}
 
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -260,47 +257,44 @@
                         }).catch((error) => {
                             console.error('Ошибка при увеличении общего количества кликов:', error);
                         });
+
+                        const counter = document.getElementById('counter');
+                        const energyCounter = document.getElementById('energy-counter');
+
+                        const floatingText = document.createElement('div');
+                        floatingText.className = 'floating-text';
+                        floatingText.innerText = '+1';
+                        floatingText.style.left = `${Math.random() * 80 + 10}%`;
+                        floatingText.style.top = `${Math.random() * 80 + 10}%`;
+
+                        document.body.appendChild(floatingText);
+
+                        setTimeout(() => {
+                            floatingText.remove();
+                        }, 1000);
+
+                        onValue(userClicksRef, (snapshot) => {
+                            counter.innerText = snapshot.val();
+                        });
+
+                        onValue(userEnergyRef, (snapshot) => {
+                            energyCounter.innerText = `${snapshot.val()}/1000`;
+                        });
                     }
-                }).catch((error) => {
-                    console.error('Ошибка при обновлении энергии:', error);
                 });
-            }).catch((error) => {
-                console.error('Ошибка при чтении энергии пользователя:', error);
             });
         }
 
-        function updateUserData(userId) {
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-
-            onValue(userClicksRef, (snapshot) => {
-                document.getElementById('counter').innerText = snapshot.val() || 0;
-            }).catch((error) => {
-                console.error('Ошибка при чтении кликов пользователя:', error);
-            });
-
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val() || 0;
-                document.getElementById('energy-counter').innerText = `${energy}/1000`;
-            }).catch((error) => {
-                console.error('Ошибка при чтении энергии пользователя:', error);
-            });
-        }
-
-        let lastClickTime = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener("DOMContentLoaded", () => {
             const userId = getCookie('user_id');
             if (userId) {
+                displayUserInfo(userId);
                 initializeUser(userId);
                 startEnergyRegen(userId);
-                updateUserData(userId);
-
-                document.getElementById('button').addEventListener('click', incrementCounter);
-                displayUserInfo(userId);
-            } else {
-                console.error('User ID not found in cookies');
             }
+
+            const button = document.getElementById('button');
+            button.addEventListener('click', incrementCounter);
         });
     </script>
 </body>
