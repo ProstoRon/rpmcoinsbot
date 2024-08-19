@@ -22,8 +22,8 @@
         }
 
         .button {
-            width: 400px; 
-            height: 400px; 
+            width: 500px; 
+            height: 500px; 
             background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
             background-size: cover; 
             background-position: center; 
@@ -122,7 +122,7 @@
             if (!userId) {
                 window.location.href = 'login.html';
             } else {
-                updateLocalCounter();
+                updateLocalCounters();
                 displayUserInfo(userId);
             }
         }
@@ -145,6 +145,8 @@
             }
 
             const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
             runTransaction(userClicksRef, (currentValue) => {
                 return (currentValue || 0) + 1;
             }).then((result) => {
@@ -152,21 +154,36 @@
                     const updatedClicks = result.snapshot.val();
                     document.getElementById('counter').innerText = updatedClicks !== null ? updatedClicks : 0;
                     showFloatingText(event, updatedClicks);
+                    // Обновляем totalClicks
+                    runTransaction(userTotalClicksRef, (currentTotalValue) => {
+                        return (currentTotalValue || 0) + 1;
+                    }).catch((error) => {
+                        console.error('Error updating totalClicks:', error);
+                    });
                 }
             }).catch((error) => {
-                console.error('Error updating counter:', error);
+                console.error('Error updating clicks:', error);
             });
         };
 
-        function updateLocalCounter() {
+        function updateLocalCounters() {
             if (!userId) return;
 
             const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
             onValue(userClicksRef, (snapshot) => {
                 const clicks = snapshot.val();
                 document.getElementById('counter').innerText = clicks !== null ? clicks : 0;
             }, (error) => {
-                console.error('Error reading counter:', error);
+                console.error('Error reading clicks:', error);
+            });
+
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                // Сохраните значение totalClicks, если нужно для дальнейшего использования
+            }, (error) => {
+                console.error('Error reading totalClicks:', error);
             });
         }
 
