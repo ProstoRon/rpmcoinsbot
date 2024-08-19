@@ -4,7 +4,7 @@
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body {
+                body {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -186,15 +186,14 @@
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
 
-                    runTransaction(userEnergyRef, (currentEnergy) => {
-                        if (currentEnergy === null) return 0;
-
-                        return onValue(userMaxEnergyRef, (snapshot) => {
-                            const maxEnergy = snapshot.val() || 1000;
-                            return currentEnergy < maxEnergy ? currentEnergy + 1 : currentEnergy;
-                        }, { onlyOnce: true });
-                    }).catch((error) => {
-                        console.error('Ошибка при восстановлении энергии:', error);
+                    onValue(userMaxEnergyRef, (snapshot) => {
+                        const maxEnergy = snapshot.val() || 1000;
+                        runTransaction(userEnergyRef, (currentEnergy) => {
+                            if (currentEnergy === null) return 0;
+                            return Math.min(currentEnergy + 1, maxEnergy);
+                        }).catch((error) => {
+                            console.error('Ошибка при восстановлении энергии:', error);
+                        });
                     });
                 }
             }, energyRegenInterval);
