@@ -9,32 +9,32 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to bottom right, #ff7e5f, #feb47b); 
+            background: linear-gradient(to bottom right, #8e2de2, #4a00e0);
             font-family: Arial, sans-serif;
-            color: #333;
+            color: #fff;
         }
 
         .container {
             text-align: center;
-            background: white;
-            padding: 40px; /* Увеличено */
+            background: #fff;
+            padding: 40px;
             border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            max-width: 600px; /* Увеличено */
+            max-width: 600px;
             width: 100%;
         }
 
         h1 {
-            font-size: 32px; /* Увеличено */
-            margin-bottom: 30px; /* Увеличено */
-            color: #ff7e5f;
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #4a00e0;
         }
 
         .input {
-            width: calc(100% - 44px); /* Увеличено */
-            padding: 20px; /* Увеличено */
-            margin-bottom: 20px; /* Увеличено */
-            font-size: 24px; /* Увеличено */
+            width: calc(100% - 44px);
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 24px;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -42,18 +42,18 @@
         }
 
         .input:focus {
-            border-color: #ff7e5f;
-            box-shadow: 0 6px 12px rgba(255, 126, 95, 0.2);
+            border-color: #4a00e0;
+            box-shadow: 0 6px 12px rgba(74, 0, 224, 0.2);
             outline: none;
         }
 
         .button {
             width: 100%;
-            padding: 20px; /* Увеличено */
-            background-color: #ff7e5f;
+            padding: 20px;
+            background-color: #4a00e0;
             color: white;
             border: none;
-            font-size: 24px; /* Увеличено */
+            font-size: 24px;
             cursor: pointer;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -61,35 +61,35 @@
         }
 
         .button:hover {
-            background-color: #feb47b;
+            background-color: #6c1db3;
         }
 
         .button:active {
-            background-color: #f4a07a;
+            background-color: #3e00b0;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         #error-message {
             color: #d9534f;
-            font-size: 24px; /* Увеличено */
-            margin-top: 20px; /* Увеличено */
+            font-size: 24px;
+            margin-top: 20px;
         }
 
         @media only screen and (max-width: 600px) {
             .container {
-                padding: 30px; /* Увеличено */
+                padding: 30px;
             }
 
             .input {
-                font-size: 20px; /* Увеличено */
+                font-size: 20px;
             }
 
             .button {
-                font-size: 20px; /* Увеличено */
+                font-size: 20px;
             }
 
             #error-message {
-                font-size: 20px; /* Увеличено */
+                font-size: 20px;
             }
         }
     </style>
@@ -97,8 +97,9 @@
 <body>
     <div class="container">
         <h1>Вход в систему</h1>
-        <input type="text" id="userIdInput" class="input" placeholder="Введите ID">
-        <button class="button" id="registerButton">Вход</button>
+        <input type="text" id="userIdInput" class="input" placeholder="Введите ник">
+        <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
+        <button class="button" id="loginButton">Войти</button>
         <div id="error-message"></div>
     </div>
     <!-- Подключаем Firebase -->
@@ -120,35 +121,42 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        function register() {
+        function login() {
             const userId = document.getElementById('userIdInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
             const errorMessage = document.getElementById('error-message');
 
-            if (!userId) {
-                errorMessage.textContent = 'Пожалуйста, введите ID.';
+            if (!userId || !password) {
+                errorMessage.innerHTML = 'Пожалуйста, введите ник и пароль.';
                 return;
             }
 
-            console.log('Попытка зарегистрировать пользователя с ID:', userId);
+            console.log('Попытка входа пользователя с ником:', userId);
 
             const userRef = ref(database, `users/${userId}`);
             get(userRef).then((snapshot) => {
                 if (snapshot.exists()) {
-                    console.log('ID найден в базе данных.');
-                    document.cookie = `userId=${userId}; path=/`;
-                    window.location.href = 'index.html';
+                    const userData = snapshot.val();
+                    if (userData.password === password) {
+                        console.log('Пользователь успешно вошёл.');
+                        document.cookie = `userId=${userId}; path=/`;
+                        window.location.href = 'index.html';
+                    } else {
+                        console.log('Неверный пароль.');
+                        errorMessage.innerHTML = 'Неверный пароль.';
+                    }
                 } else {
-                    console.log('ID не найден в базе данных.');
-                    errorMessage.textContent = `ID ${userId} не найден в базе данных.`;
+                    console.log('Пользователь не найден.');
+                    errorMessage.innerHTML = `Такой аккаунт не существует. <a href="https://prostoron.github.io/rpmcoinsbot/login">Зарегистрируйтесь здесь</a>.`;
                 }
             }).catch((error) => {
-                console.error('Ошибка проверки:', error);
-                errorMessage.textContent = 'Ошибка при проверке ID. Подробности в консоли.';
+                console.error('Ошибка входа:', error);
+                errorMessage.innerHTML = 'Ошибка при входе. Подробности в консоли.';
             });
         }
 
-        // Привязываем функцию к кнопке регистрации после загрузки
-        document.getElementById('registerButton').addEventListener('click', register);
+        // Привязываем функцию к кнопке входа после загрузки
+        document.getElementById('loginButton').addEventListener('click', login);
     </script>
 </body>
 </html>
