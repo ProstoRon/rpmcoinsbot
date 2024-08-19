@@ -1,51 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Page</title>
+    <title>RPMcoinbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #6a0dad, #a63dbf);
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
             font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: relative; /* Чтобы позиционировать изображение в углу */
         }
+
         .container {
+            display: block;
             text-align: center;
-            color: #fff;
+            position: relative;
         }
+
         .button {
-            background: url('https://i.imgur.com/dtJW1Wu.png') no-repeat center center;
-            background-size: contain;
-            width: 200px;
-            height: 200px;
+            width: 500px; 
+            height: 500px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
             border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative; /* Для позиционирования всплывающего текста */
+            transform-style: preserve-3d; /* Для 3D эффектов */
+            perspective: 1000px; /* Для задания перспективы */
         }
+
+        .button:active {
+            transform: scale(0.9); 
+        }
+
         .counter {
-            margin-top: 20px;
+            font-size: 48px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        }
+
+        .energy {
             font-size: 24px;
+            color: #444;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 28px;
+            font-weight: bold;
+            animation: floatUp 1s ease forwards;
+            pointer-events: none; /* Исключает взаимодействие с этим текстом */
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        .user-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .rounded-image {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 60px; /* Задайте размер изображения по вашему усмотрению */
+            height: 60px;
+            border-radius: 50%; /* Радиус округления углов */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Тень для изображения */
+            object-fit: cover;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .button {
+                width: 320px; 
+                height: 320px; 
+                bottom: -200px;
+            }
+            
+            .counter {
+                font-size: 36px; 
+                position: absolute;
+                bottom: 300px;
+            }
         }
     </style>
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
 </head>
 <body>
     <div class="container">
-        <button class="button" id="clickButton"></button>
-        <div class="counter">
-            Total Clicks: <span id="totalClicks">Loading...</span>
-        </div>
+        <div class="button" id="button" onclick="incrementCounter(event)"></div>
+        <div class="counter" id="counter">0</div>
+        <div class="energy" id="energy">Energy: 100</div>
     </div>
+    <div class="user-info" id="user-info"></div>
+    <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
+    <!-- Подключаем Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-    <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
             authDomain: "rpmcoins-48e4f.firebaseapp.com",
@@ -57,44 +140,184 @@
             measurementId: "G-S2PRPR80F5"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-        // Reference to the database
-        const db = firebase.database();
+        let userId = null;
+        let lastClickTime = 0;
+        const clickInterval = 100; // Интервал между кликами в миллисекундах
 
-        // Get userId from URL parameter or use a default value
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userId') || 'defaultUserId';  // Replace 'defaultUserId' with an appropriate default value
+        function checkCookie() {
+            userId = getCookie('userId');
+            if (!userId) {
+                window.location.href = 'login.html';
+            } else {
+                updateLocalData();
+                displayUserInfo(userId);
+            }
+        }
 
-        // Function to fetch and display user data
-        function displayUserData() {
-            db.ref('users/' + userId).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById('totalClicks').textContent = data.totalClicks || '0';
-                } else {
-                    document.getElementById('totalClicks').textContent = '0';
-                }
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function displayUserInfo(userId) {
+            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
+        }
+
+        window.incrementCounter = function(event) {
+            const currentTime = Date.now();
+            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
+
+            lastClickTime = currentTime;
+
+            if ("vibrate" in navigator) {
+                navigator.vibrate(50); // Вибрация на 50 миллисекунд
+            }
+
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+
+            onValue(userClicksRef, (snapshot) => {
+                const clicks = snapshot.val() || 1; // Значение clicks из базы данных
+
+                runTransaction(userTotalClicksRef, (currentValue) => {
+                    return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
+                }).then((result) => {
+                    if (result.committed) {
+                        const updatedCount = result.snapshot.val();
+                        document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                        showFloatingText(event, clicks);
+                    }
+                }).catch((error) => {
+                    console.error('Error updating counter:', error);
+                });
+            });
+
+            // Уменьшение энергии
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val() || 100; // Значение energy из базы данных
+                const newEnergy = Math.max(0, energy - 10); // Уменьшаем энергию на 10, но не ниже 0
+
+                userEnergyRef.set(newEnergy).then(() => {
+                    document.getElementById('energy').innerText = `Energy: ${newEnergy}`;
+                }).catch((error) => {
+                    console.error('Error updating energy:', error);
+                });
+            });
+        };
+
+        function updateLocalData() {
+            if (!userId) return;
+
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+            }, (error) => {
+                console.error('Error reading counter:', error);
+            });
+
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val();
+                document.getElementById('energy').innerText = `Energy: ${energy !== null ? energy : 100}`;
+            }, (error) => {
+                console.error('Error reading energy:', error);
             });
         }
 
-        // Function to increment click count
-        function incrementClickCount() {
-            const userRef = db.ref('users/' + userId);
-            userRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const newTotalClicks = (data.totalClicks || 0) + 1;
-                userRef.update({ totalClicks: newTotalClicks });
-                document.getElementById('totalClicks').textContent = newTotalClicks;
+        function showFloatingText(event, clicks) {
+            if (!userId) return;
+
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.innerText = `+${clicks}`;
+
+            const buttonRect = event.target.getBoundingClientRect();
+            const x = event.clientX - buttonRect.left;
+            const y = event.clientY - buttonRect.top;
+
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+
+            event.target.appendChild(floatingText);
+
+            // Удаление элемента после завершения анимации
+            floatingText.addEventListener('animationend', () => {
+                floatingText.remove();
             });
         }
 
-        // Initialize page
-        displayUserData();
+        function applyButtonTilt(event) {
+            const button = document.getElementById('button');
+            const buttonRect = button.getBoundingClientRect();
+            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
 
-        // Add event listener to button
-        document.getElementById('clickButton').addEventListener('click', incrementClickCount);
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            const deltaX = mouseX - buttonCenterX;
+            const deltaY = mouseY - buttonCenterY;
+
+            const maxTilt = 30; // Максимальный угол наклона
+
+            const tiltX = (deltaY / buttonRect.height) * maxTilt;
+            const tiltY = (deltaX / buttonRect.width) * maxTilt;
+
+            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        }
+
+        function resetButtonTilt() {
+            const button = document.getElementById('button');
+            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        }
+
+        function handleMouseDown(event) {
+            applyButtonTilt(event);
+            document.addEventListener('mousemove', applyButtonTilt);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseUp() {
+            resetButtonTilt();
+            document.removeEventListener('mousemove', applyButtonTilt);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleTouchStart(event) {
+            applyButtonTilt(event.touches[0]);
+            document.addEventListener('touchmove', applyButtonTilt);
+            document.addEventListener('touchend', handleTouchEnd);
+        }
+
+        function handleTouchEnd() {
+            resetButtonTilt();
+            document.removeEventListener('touchmove', applyButtonTilt);
+            document.removeEventListener('touchend', handleTouchEnd);
+        }
+
+        document.getElementById('button').addEventListener('mousedown', handleMouseDown);
+        document.getElementById('button').addEventListener('touchstart', handleTouchStart);
+
+        document.addEventListener('DOMContentLoaded', checkCookie);
+
+        function deleteCookie(name) {
+            document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+        }
+
+        function deleteAllCookies() {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].split('=');
+                deleteCookie(cookie[0].trim());
+            }
+        }
     </script>
 </body>
 </html>
