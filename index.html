@@ -172,7 +172,7 @@
         function showFloatingText(event, text) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = ref(database, `users/${userId}/totalClicks`);
+            floatingText.innerText = ref(database, `users/${userId}/${clicks}`);
 
             const buttonRect = event.target.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
