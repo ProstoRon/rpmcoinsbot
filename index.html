@@ -36,7 +36,7 @@
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
+            position: relative;
         }
 
         .button:active {
@@ -45,7 +45,6 @@
 
         .counter {
             font-size: 48px; 
-            bottom: 50px;
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
@@ -54,16 +53,11 @@
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
             pointer-events: none; /* Исключает взаимодействие с этим текстом */
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
-        }
-        .floating-text:hover, .floating-text:focus {
-            background-color: rgba(0, 0, 0, 0.2); /* Полупрозрачный фон для выделения */
-            color: rgba(255, 255, 255, 1); /* Яркий цвет текста при выделении */
         }
 
         @keyframes floatUp {
@@ -89,26 +83,24 @@
             .button {
                 width: 320px; 
                 height: 320px; 
-                bottom: -200px;
             }
-            
+
             .counter {
                 font-size: 36px; 
-                position: absolute;
-                bottom: 300px;
             }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="incrementCounter(event)"></div>
+        <div class="button" onclick="handleClick(event)"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -131,7 +123,7 @@
             if (!userId) {
                 window.location.href = 'login.html';
             } else {
-                updateLocalCounter();
+                updateLocalCounters();
                 displayUserInfo(userId);
             }
         }
@@ -146,28 +138,7 @@
             document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
-        window.incrementCounter = function(event) {
-            if (!userId) return;
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            runTransaction(userClicksRef, (currentValue) => {
-                return (currentValue || 0) + 1;
-            }).then((result) => {
-                if (result.committed) {
-                    const updatedCount = result.snapshot.val();
-                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(event, updatedCount);
-                }
-            }).catch((error) => {
-                console.error('Error updating counter:', error);
-            });
-        };
-
-        function updateLocalCounter() {
+        function updateLocalCounters() {
             if (!userId) return;
 
             const userClicksRef = ref(database, `users/${userId}/totalClicks`);
@@ -175,39 +146,63 @@
                 const totalClicks = snapshot.val();
                 document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
             }, (error) => {
-                console.error('Error reading counter:', error);
+                console.error('Error reading totalClicks:', error);
             });
         }
-function showFloatingText(event) {
-    if (!userId) return;
 
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
+        function handleClick(event) {
+            if (!userId) return;
 
-    // Получаем значение clicks из базы данных
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
-    onValue(userClicksRef, (snapshot) => {
-        const clicks = snapshot.val() || 0;
-        floatingText.innerText = `+${clicks}`;
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const totalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-        const buttonRect = event.target.getBoundingClientRect();
-        const x = event.clientX - buttonRect.left;
-        const y = event.clientY - buttonRect.top;
+            onValue(userClicksRef, (snapshot) => {
+                const clicks = snapshot.val();
+                if (clicks !== null) {
+                    const increment = clicks;
 
-        floatingText.style.left = `${x}px`;
-        floatingText.style.top = `${y}px`;
+                    // Update totalClicks in the database
+                    onValue(totalClicksRef, (snapshot) => {
+                        const currentTotalClicks = snapshot.val() || 0;
+                        update(totalClicksRef, {
+                            totalClicks: currentTotalClicks + increment
+                        }).then(() => {
+                            // Show floating text with the value of clicks
+                            showFloatingText(event, increment);
+                            // Update the counter to reflect the new totalClicks value
+                            updateLocalCounters();
+                        }).catch((error) => {
+                            console.error('Error updating totalClicks:', error);
+                        });
+                    });
+                }
+            }, (error) => {
+                console.error('Error reading clicks:', error);
+            });
+        }
 
-        event.target.appendChild(floatingText);
+        function showFloatingText(event, text) {
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.innerText = `+${text}`;
 
-        // Удаление элемента после завершения анимации
-        floatingText.addEventListener('animationend', () => {
-            floatingText.remove();
-        });
-    });
-}
+            const buttonRect = event.target.getBoundingClientRect();
+            const x = event.clientX - buttonRect.left;
+            const y = event.clientY - buttonRect.top;
 
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+
+            event.target.appendChild(floatingText);
+
+            // Удаление элемента после завершения анимации
+            floatingText.addEventListener('animationend', () => {
+                floatingText.remove();
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', checkCookie);
+
         function deleteCookie(name) {
             document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
         }
