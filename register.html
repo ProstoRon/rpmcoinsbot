@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to bottom right, #ff7e5f, #feb47b); 
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #ff7e5f;
+        }
+
+        .input {
+            width: calc(100% - 44px);
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .input:focus {
+            border-color: #ff7e5f;
+            box-shadow: 0 6px 12px rgba(255, 126, 95, 0.2);
+            outline: none;
+        }
+
+        .button {
+            width: 100%;
+            padding: 20px;
+            background-color: #ff7e5f;
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #feb47b;
+        }
+
+        .button:active {
+            background-color: #f4a07a;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #error-message {
+            color: #d9534f;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 30px;
+            }
+
+            .input {
+                font-size: 20px;
+            }
+
+            .button {
+                font-size: 20px;
+            }
+
+            #error-message {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Регистрация</h1>
+        <input type="text" id="usernameInput" class="input" placeholder="Введите ник">
+        <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
+        <button class="button" id="registerButton">Зарегистрироваться</button>
+        <div id="error-message"></div>
+    </div>
+    <!-- Подключаем Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function register() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+            const errorMessage = document.getElementById('error-message');
+
+            if (!username || !password) {
+                errorMessage.textContent = 'Пожалуйста, заполните все поля.';
+                return;
+            }
+
+            console.log('Попытка зарегистрировать пользователя с ником:', username);
+
+            const userRef = ref(database, `users/${username}`);
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    console.log('Ник уже используется.');
+                    errorMessage.textContent = `Ник ${username} уже зарегистрирован.`;
+                } else {
+                    // Создание нового пользователя в базе данных
+                    set(userRef, {
+                        clicks: 1,
+                        energy: 1000,
+                        maxenergy: 1000,
+                        totalClicks: 0,
+                        password: password
+                    }).then(() => {
+                        console.log('Пользователь успешно зарегистрирован.');
+                        document.cookie = `userId=${username}; path=/`;
+                        window.location.href = 'index.html';
+                    }).catch((error) => {
+                        console.error('Ошибка регистрации:', error);
+                        errorMessage.textContent = 'Ошибка при регистрации. Подробности в консоли.';
+                    });
+                }
+            }).catch((error) => {
+                console.error('Ошибка проверки:', error);
+                errorMessage.textContent = 'Ошибка при проверке никнейма. Подробности в консоли.';
+            });
+        }
+
+        // Привязываем функцию к кнопке регистрации после загрузки
+        document.getElementById('registerButton').addEventListener('click', register);
+    </script>
+</body>
+</html>
