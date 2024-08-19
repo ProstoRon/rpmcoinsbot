@@ -58,6 +58,11 @@
             animation: floatUp 1s ease forwards;
             pointer-events: none; /* Исключает взаимодействие с этим текстом */
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
+        }
+        .floating-text:hover, .floating-text:focus {
+            background-color: rgba(0, 0, 0, 0.2); /* Полупрозрачный фон для выделения */
+            color: rgba(255, 255, 255, 1); /* Яркий цвет текста при выделении */
         }
 
         @keyframes floatUp {
