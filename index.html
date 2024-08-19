@@ -201,6 +201,7 @@
 
                     onValue(userMaxEnergyRef, (snapshot) => {
                         const maxEnergy = snapshot.val() || 1000;
+                        console.log("Max energy:", maxEnergy); // Debugging line
                         runTransaction(userEnergyRef, (currentEnergy) => {
                             if (currentEnergy === null) return 0;
                             return Math.min(currentEnergy + 1, maxEnergy);
@@ -225,40 +226,42 @@
             onValue(userEnergyRef, (energySnapshot) => {
                 const currentEnergy = energySnapshot.val();
                 
+                console.log("Current energy:", currentEnergy); // Debugging line
+
                 if (currentEnergy <= 0) {
                     const button = document.getElementById('button');
-                    button.classList.add('shake');
-                    setTimeout(() => {
-                        button.classList.remove('shake');
-                    }, 500);
+                    button.classList.add('disabled');
+                    setTimeout(() => button.classList.remove('disabled'), 1000);
                     return;
                 }
 
-                onValue(userClicksRef, (clicksSnapshot) => {
-                    const clicks = clicksSnapshot.val() || 1;
-
-                    runTransaction(userEnergyRef, (energy) => {
-                        if (energy === null) return 0;
-                        if (energy <= 0) return energy;
-                        return energy - 1;
-                    }).then((energyResult) => {
-                        if (energyResult.committed) {
+                runTransaction(userEnergyRef, (energy) => {
+                    if (energy === null) return 0;
+                    if (energy <= 0) return energy;
+                    return energy - 1;
+                }).then((energyResult) => {
+                    if (energyResult.committed) {
+                        runTransaction(userClicksRef, (currentClicks) => {
+                            return (currentClicks || 0) + 1;
+                        }).then(() => {
                             runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                                return (currentTotalClicks || 0) + (clicks || 1);
+                                return (currentTotalClicks || 0) + 1;
                             }).then((totalClicksResult) => {
                                 if (totalClicksResult.committed) {
                                     const updatedCount = totalClicksResult.snapshot.val();
                                     document.getElementById('counter').innerText = updatedCount;
-                                    showFloatingText(event, clicks);
+                                    showFloatingText(event, 1);
                                 }
                             }).catch((error) => {
                                 console.error('Ошибка при обновлении счетчика кликов:', error);
                             });
-                        }
-                    }).catch((error) => {
-                        console.error('Ошибка при списании энергии:', error);
-                    });
-                }, { onlyOnce: true });
+                        }).catch((error) => {
+                            console.error('Ошибка при обновлении кликов:', error);
+                        });
+                    }
+                }).catch((error) => {
+                    console.error('Ошибка при списании энергии:', error);
+                });
             }, { onlyOnce: true });
         };
 
