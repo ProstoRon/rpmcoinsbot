@@ -97,7 +97,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="incrementCounter(event)"></div>
+        <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
@@ -207,6 +207,23 @@
                 floatingText.remove();
             });
         }
+
+        function applyButtonTilt(event) {
+            const button = document.getElementById('button');
+            const buttonRect = button.getBoundingClientRect();
+            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            const angle = Math.atan2(mouseY - buttonCenterY, mouseX - buttonCenterX) * 180 / Math.PI;
+
+            button.style.transform = `rotate(${angle}deg)`;
+        }
+
+        document.addEventListener('mousemove', applyButtonTilt);
+        document.addEventListener('touchmove', applyButtonTilt);
 
         document.addEventListener('DOMContentLoaded', checkCookie);
 
