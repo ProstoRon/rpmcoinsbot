@@ -37,26 +37,11 @@
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
+            position: relative;
         }
 
         .button:active {
             transform: scale(0.9); 
-        }
-
-        .button.shake {
-            animation: shake 0.5s ease forwards;
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            10% { transform: translateX(-15px); }
-            20% { transform: translateX(10px); }
-            30% { transform: translateX(-10px); }
-            40% { transform: translateX(5px); }
-            50% { transform: translateX(-5px); }
-            60% { transform: translateX(0); }
-            100% { transform: translateX(0); }
         }
 
         .counter {
@@ -68,7 +53,7 @@
 
         .energy-counter {
             font-size: 24px;
-            font-family: 'Kanit', sans-serif; /* Шрифт Kanit для Energy */
+            font-family: 'Kanit', sans-serif; 
             position: absolute;
             bottom: 10%;
             left: 50%;
@@ -77,15 +62,21 @@
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
+        .user-info {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 20px;
+        }
+
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
             font-size: 28px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none; /* Исключает взаимодействие с этим текстом */
+            pointer-events: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         @keyframes floatUp {
@@ -121,7 +112,7 @@
                 transition: transform 0.1s ease, box-shadow 0.1s ease;
                 -webkit-tap-highlight-color: transparent;
                 outline: none;
-                margin: 0 auto; /* Центрирование кнопки */
+                margin: 0 auto;
             }
 
             .counter {
@@ -137,7 +128,7 @@
 
             .energy-counter {
                 font-size: 24px;
-                font-family: 'Kanit', sans-serif; /* Шрифт Kanit для Energy */
+                font-family: 'Kanit', sans-serif;
                 position: absolute;
                 bottom: 10%;
                 left: 50%;
@@ -176,12 +167,13 @@
         const database = getDatabase(app);
 
         let userId = null;
-        const energyRegenInterval = 2000; // Интервал восстановления энергии в миллисекундах
-        const clickInterval = 100; // Интервал между кликами в миллисекундах
+        const energyRegenInterval = 2000;
+        const clickInterval = 100;
         let lastClickTime = 0;
 
         function checkCookie() {
             userId = getCookie('userId');
+            console.log("User ID from cookie:", userId); // Debugging line
             if (!userId) {
                 window.location.href = 'register.html';
             } else {
@@ -234,7 +226,6 @@
                 const currentEnergy = energySnapshot.val();
                 
                 if (currentEnergy <= 0) {
-                    // Если энергии нет, вызываем тряску кнопки
                     const button = document.getElementById('button');
                     button.classList.add('shake');
                     setTimeout(() => {
@@ -248,11 +239,10 @@
 
                     runTransaction(userEnergyRef, (energy) => {
                         if (energy === null) return 0;
-                        if (energy <= 0) return energy; // Если энергии недостаточно, не списывать
+                        if (energy <= 0) return energy;
                         return energy - 1;
                     }).then((energyResult) => {
                         if (energyResult.committed) {
-                            // Энергия успешно уменьшена, теперь обновляем клики
                             runTransaction(userTotalClicksRef, (currentTotalClicks) => {
                                 return (currentTotalClicks || 0) + (clicks || 1);
                             }).then((totalClicksResult) => {
@@ -293,6 +283,7 @@
 
                 onValue(userTotalClicksRef, (snapshot) => {
                     const totalClicks = snapshot.val();
+                    console.log("Total clicks:", totalClicks); // Debugging line
                     document.getElementById('counter').innerText = totalClicks;
                 });
 
@@ -300,6 +291,7 @@
                     const energy = energySnapshot.val();
                     onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
                         const maxEnergy = maxEnergySnapshot.val();
+                        console.log("Energy:", energy, "Max Energy:", maxEnergy); // Debugging line
                         document.getElementById('energy-counter').innerText = `Energy: ${energy || 0}/${maxEnergy || 1000}`;
                     });
                 });
