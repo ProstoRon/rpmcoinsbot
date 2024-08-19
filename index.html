@@ -32,7 +32,6 @@
             cursor: pointer;
             margin-bottom: 20px;
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
-            position: relative; /* Это необходимо для позиционирования текста внутри кнопки */
         }
 
         .button:active {
@@ -92,7 +91,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="handleClick(event)"></div>
+        <div class="button" onclick="handleClick()"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
@@ -137,15 +136,15 @@
             document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
-        function handleClick(event) {
+        function handleClick() {
             // Вибрация на 50 миллисекунд
             if (navigator.vibrate) {
                 navigator.vibrate(50);
             }
-            incrementCounter(event);
+            incrementCounter();
         }
 
-        window.incrementCounter = function(event) {
+        window.incrementCounter = function() {
             if (!userId) return; // Защита от нажатия до загрузки пользователя
 
             const userClicksRef = ref(database, `users/${userId}/totalClicks`);
@@ -155,27 +154,23 @@
                 if (result.committed) {
                     const updatedCount = result.snapshot.val();
                     document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(`Clicks: ${updatedCount}`, event);
+                    showFloatingText(`Clicks: ${updatedCount}`);
                 }
             }).catch((error) => {
                 console.error('Error updating counter:', error);
             });
         };
 
-        function showFloatingText(text, event) {
+        function showFloatingText(text) {
             const textElement = document.createElement('div');
             textElement.className = 'fade-text';
             textElement.innerText = text;
+            document.body.appendChild(textElement);
 
-            // Позиционируем текст относительно позиции клика
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
-
-            textElement.style.left = `${x}px`;
-            textElement.style.top = `${y}px`;
-
-            event.target.appendChild(textElement);
+            // Позиционируем текст в центре кнопки
+            const buttonRect = document.querySelector('.button').getBoundingClientRect();
+            textElement.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
+            textElement.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
 
             // Удаляем текст после завершения анимации
             textElement.addEventListener('animationend', () => {
