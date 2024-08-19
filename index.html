@@ -119,7 +119,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -138,6 +138,7 @@
         let userId = null;
         let lastClickTime = 0;
         const clickInterval = 100; // Интервал между кликами в миллисекундах
+        const energyReplenishInterval = 4000; // Интервал восполнения энергии в миллисекундах
 
         function checkCookie() {
             userId = getCookie('userId');
@@ -146,6 +147,7 @@
             } else {
                 updateLocalCounter();
                 displayUserInfo(userId);
+                startEnergyReplenish();
             }
         }
 
@@ -159,6 +161,20 @@
             document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
+        function startEnergyReplenish() {
+            setInterval(async () => {
+                if (userId) {
+                    const userEnergyRef = ref(database, `users/${userId}/energy`);
+                    onValue(userEnergyRef, async (snapshot) => {
+                        const currentEnergy = snapshot.val() || 0;
+                        if (currentEnergy < 1000) { // max energy
+                            await set(userEnergyRef, Math.min(currentEnergy + 1, 1000)); // Восполняем энергию
+                        }
+                    });
+                }
+            }, energyReplenishInterval);
+        }
+
         window.incrementCounter = function(event) {
             const currentTime = Date.now();
             if (!userId || (currentTime - lastClickTime < clickInterval)) return;
@@ -169,23 +185,38 @@
                 navigator.vibrate(50); // Вибрация на 50 миллисекунд
             }
 
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userClicksRef = ref(database, `users/${userId}/clicks`);
             const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            onValue(userClicksRef, (snapshot) => {
-                const clicks = snapshot.val() || 1; // Значение clicks из базы данных
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val() || 0;
 
-                runTransaction(userTotalClicksRef, (currentValue) => {
-                    return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
-                }).then((result) => {
-                    if (result.committed) {
-                        const updatedCount = result.snapshot.val();
-                        document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                        showFloatingText(event, clicks);
-                    }
-                }).catch((error) => {
-                    console.error('Error updating counter:', error);
-                });
+                if (energy > 0) {
+                    runTransaction(userEnergyRef, (currentValue) => {
+                        return (currentValue || 0) - 1; // Уменьшаем энергию на 1
+                    }).then((result) => {
+                        if (result.committed) {
+                            onValue(userClicksRef, (snapshot) => {
+                                const clicks = snapshot.val() || 1; // Значение clicks из базы данных
+
+                                runTransaction(userTotalClicksRef, (currentValue) => {
+                                    return (currentValue || 0) + clicks; // Увеличиваем totalClicks на значение clicks
+                                }).then((result) => {
+                                    if (result.committed) {
+                                        const updatedCount = result.snapshot.val();
+                                        document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                                        showFloatingText(event, clicks);
+                                    }
+                                }).catch((error) => {
+                                    console.error('Error updating counter:', error);
+                                });
+                            });
+                        }
+                    }).catch((error) => {
+                        console.error('Error updating energy:', error);
+                    });
+                }
             });
         };
 
