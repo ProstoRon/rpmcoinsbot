@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <title>Button Animation Example</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPMCoinsBot</title>
     <style>
         body {
             display: flex;
@@ -16,42 +15,35 @@
             text-align: center;
         }
 
-        .container {
-            position: relative;
-        }
-
-        .user-info {
-            font-size: 20px;
-            color: #fff;
-            margin-bottom: 20px;
-        }
-
-        .counter {
-            font-size: 48px;
-            color: #fff;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
         .button {
-            width: 100px;
-            height: 100px;
-            background-image: url('https://i.imgur.com/a7FYHOk.png');
-            background-size: cover;
-            background-position: center;
+            width: 200px; 
+            height: 200px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
             border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            background-color: rgba(255, 255, 255, 0); /* Полупрозрачный фон */
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
             -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative; /* Для позиционирования всплывающего текста */
+            transform-style: preserve-3d; /* Для 3D эффектов */
+            perspective: 1000px; /* Для задания перспективы */
         }
 
         .button:active {
-            transform: scale(0.9);
-            box-shadow: none;
+            transform: scale(0.9); /* Эффект сжатия кнопки при нажатии */
+        }
+
+        .counter {
+            font-size: 48px; 
+            color: #fff; /* Цвет текста счетчика */
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            margin-top: 20px;
         }
 
         .floating-text {
@@ -60,9 +52,9 @@
             font-size: 28px;
             font-weight: bold;
             animation: floatUp 1s ease forwards;
-            pointer-events: none;
+            pointer-events: none; /* Исключает взаимодействие с этим текстом */
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
         }
 
         @keyframes floatUp {
@@ -82,149 +74,62 @@
                 height: 320px; 
             }
 
-            .button:active {
-                transform: scale(0.9);
-                box-shadow: none;
+            .counter {
+                font-size: 36px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="user-info" class="user-info">Loading user data...</div>
-        <div id="counter" class="counter">0</div>
-        <button id="button" class="button"></button>
+        <div class="button" id="button"></div>
+        <div class="counter" id="counter">0</div>
     </div>
+    <script>
+        const button = document.getElementById('button');
+        const counterElement = document.getElementById('counter');
 
-    <!-- Подключение Firebase -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js';
-        import { getDatabase, ref, onValue, transaction } from 'https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js';
+        // Обработчик события клика на кнопку
+        button.addEventListener('click', (event) => {
+            updateCounter();
+            showFloatingText(event, 1);
+        });
 
-        // Конфигурация Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+        // Обработка касаний на мобильных устройствах
+        button.addEventListener('touchstart', (event) => {
+            event.preventDefault(); // Предотвращение прокрутки страницы при касании
+            for (let touch of event.touches) {
+                showFloatingText(touch, 1);
+            }
+            updateCounter();
+        });
 
-        // Инициализация Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        let userId = null;
-        let lastClickTime = 0;
-        const clickInterval = 100; // Интервал между кликами в миллисекундах
-
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+        // Функция для обновления счетчика
+        function updateCounter() {
+            const currentCount = parseInt(counterElement.innerText, 10);
+            counterElement.innerText = currentCount + 1;
         }
 
-        function updateLocalCounter() {
-            if (!userId) return;
-
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-        }
-
+        // Функция для отображения всплывающего текста
         function showFloatingText(event, clicks) {
-            if (!userId) return;
-
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.innerText = `+${clicks}`;
 
-            const buttonRect = event.target.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
             const y = event.clientY - buttonRect.top;
 
             floatingText.style.left = `${x}px`;
             floatingText.style.top = `${y}px`;
 
-            event.target.appendChild(floatingText);
+            button.appendChild(floatingText);
 
             // Удаление элемента после завершения анимации
             floatingText.addEventListener('animationend', () => {
                 floatingText.remove();
             });
         }
-
-        function displayUserData() {
-            userId = getParameterByName('source');
-            if (userId) {
-                const userRef = ref(database, `users/${userId}`);
-                onValue(userRef, (snapshot) => {
-                    const userData = snapshot.val();
-                    if (userData) {
-                        document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
-                        updateLocalCounter();
-                    } else {
-                        document.getElementById('user-info').innerText = 'User not found.';
-                    }
-                }, (error) => {
-                    console.error('Error fetching user data:', error);
-                });
-            } else {
-                document.getElementById('user-info').innerText = 'No user ID provided.';
-            }
-        }
-
-        window.incrementCounter = function(event) {
-            const currentTime = Date.now();
-            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
-
-            lastClickTime = currentTime;
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-            transaction(userClicksRef, (clicks) => {
-                return (clicks || 0) + 1;
-            }).then(() => {
-                transaction(userTotalClicksRef, (totalClicks) => {
-                    return (totalClicks || 0) + 1;
-                }).then(() => {
-                    updateLocalCounter();
-                    showFloatingText(event, 1);
-                }).catch((error) => {
-                    console.error('Error updating totalClicks:', error);
-                });
-            }).catch((error) => {
-                console.error('Error updating clicks:', error);
-            });
-        };
-
-        document.getElementById('button').addEventListener('mousedown', (event) => {
-            event.target.style.transform = 'scale(0.9)';
-            event.target.style.boxShadow = 'none';
-            document.addEventListener('mousemove', incrementCounter);
-            document.addEventListener('mouseup', () => {
-                event.target.style.transform = 'scale(1)';
-                event.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-                document.removeEventListener('mousemove', incrementCounter);
-            });
-        });
-
-        document.getElementById('button').addEventListener('touchstart', (event) => {
-            incrementCounter(event);
-        });
-
-        document.addEventListener('DOMContentLoaded', displayUserData);
     </script>
 </body>
 </html>
