@@ -36,6 +36,7 @@
 
         .button:active {
             transform: scale(0.9); /* Эффект сжатия кнопки при нажатии */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Вибрация при нажатии */
         }
 
         .counter {
@@ -70,8 +71,8 @@
 
         @media only screen and (max-width: 768px) {
             .button {
-                width: 320px; 
-                height: 320px; 
+                width: 150px; 
+                height: 150px; 
             }
 
             .counter {
@@ -89,10 +90,27 @@
         const button = document.getElementById('button');
         const counterElement = document.getElementById('counter');
 
+        // Функция для обновления счетчика в базе данных
+        async function updateDatabaseCounter() {
+            const response = await fetch('/update_counter', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: 'your_user_id_here', clicks: 1 })
+            });
+            if (response.ok) {
+                console.log('Counter updated successfully');
+            } else {
+                console.error('Error updating counter');
+            }
+        }
+
         // Обработчик события клика на кнопку
         button.addEventListener('click', (event) => {
             updateCounter();
             showFloatingText(event, 1);
+            updateDatabaseCounter();
         });
 
         // Обработка касаний на мобильных устройствах
@@ -102,9 +120,10 @@
                 showFloatingText(touch, 1);
             }
             updateCounter();
+            updateDatabaseCounter();
         });
 
-        // Функция для обновления счетчика
+        // Функция для обновления счетчика на экране
         function updateCounter() {
             const currentCount = parseInt(counterElement.innerText, 10);
             counterElement.innerText = currentCount + 1;
@@ -130,6 +149,16 @@
                 floatingText.remove();
             });
         }
+
+        // Вибрация при нажатии (для мобильных устройств)
+        function vibrate() {
+            if (navigator.vibrate) {
+                navigator.vibrate(50); // Вибрация на 50 мс
+            }
+        }
+
+        button.addEventListener('mousedown', vibrate);
+        button.addEventListener('touchstart', vibrate);
     </script>
 </body>
 </html>
