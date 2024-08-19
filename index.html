@@ -88,58 +88,57 @@
         }
 
         @media only screen and (max-width: 768px) {
-    body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-    }
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
 
-    .button {
-        width: 320px; 
-        height: 320px; 
-        background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
-        background-size: cover; 
-        background-position: center; 
-        border: none;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: transform 0.1s ease, box-shadow 0.1s ease;
-        -webkit-tap-highlight-color: transparent;
-        outline: none;
-        left: 40px;
-    }
+            .button {
+                width: 320px; 
+                height: 320px; 
+                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+                background-size: cover; 
+                background-position: center; 
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                left: 40px;
+            }
 
-    .counter {
-        font-size: 36px; 
-        color: #333;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-        position: absolute;
-        top: 10%;
-        left: 50%;
-        transform: translateX(-50%);
-    }
+            .counter {
+                font-size: 36px; 
+                color: #333;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+                position: absolute;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
 
-    .energy-counter {
-        font-size: 24px;
-        position: absolute;
-        bottom: 10%;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-}
-
+            .energy-counter {
+                font-size: 24px;
+                position: absolute;
+                bottom: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0/0</div>
     </div>
     <div class="user-info" id="user-info"></div>
     <!-- Подключаем Firebase -->
@@ -276,9 +275,15 @@
             });
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
-                document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}`;
+                onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
+                    const maxEnergy = maxEnergySnapshot.val() || 1000;
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy !== null ? energy : 0}/${maxEnergy}`;
+                }, (error) => {
+                    console.error('Ошибка при чтении максимальной энергии:', error);
+                });
             }, (error) => {
                 console.error('Ошибка при чтении энергии:', error);
             });
