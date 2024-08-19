@@ -4,9 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPMcoinbot</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            display: block;
+            text-align: center;
+            position: relative;
+        }
+
+        .button {
+            width: 500px; 
+            height: 500px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .button:active {
+            transform: scale(0.9);
+        }
+
+        .counter {
+            font-size: 48px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 28px;
+            font-weight: bold;
+            animation: floatUp 1s ease forwards;
+            pointer-events: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        .user-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .rounded-image {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            object-fit: cover;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .button {
+                width: 320px; 
+                height: 320px; 
+                bottom: -200px;
+            }
+            
+            .counter {
+                font-size: 36px; 
+                position: absolute;
+                bottom: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button" id="button"></div>
+        <div class="counter" id="counter">0</div>
+    </div>
+    <div class="user-info" id="user-info">
+        <p id="user-id"></p>
+        <p id="clicks"></p>
+        <p id="energy"></p>
+        <p id="total-clicks"></p>
+    </div>
+    <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
+
+    <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -64,16 +184,92 @@
             }
         }
 
+        // Increment totalClicks on button click
+        window.incrementCounter = async function(event) {
+            const userId = getParameterByName('source');
+            if (!userId) return;
+
+            const currentTime = Date.now();
+            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
+
+            lastClickTime = currentTime;
+
+            if ("vibrate" in navigator) {
+                navigator.vibrate(50); // Vibration for 50 milliseconds
+            }
+
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            try {
+                await runTransaction(userTotalClicksRef, (currentValue) => {
+                    return (currentValue || 0) + 1;
+                });
+
+                const updatedCount = (await get(userTotalClicksRef)).val();
+                document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                showFloatingText(event, 1);
+            } catch (error) {
+                console.error('Error updating counter:', error);
+            }
+        };
+
+        function showFloatingText(event, clicks) {
+            if (!userId) return;
+
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.innerText = `+${clicks}`;
+
+            const buttonRect = event.target.getBoundingClientRect();
+            const x = event.clientX - buttonRect.left;
+            const y = event.clientY - buttonRect.top;
+
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+
+            event.target.appendChild(floatingText);
+
+            floatingText.addEventListener('animationend', () => {
+                floatingText.remove();
+            });
+        }
+
+        function applyButtonTilt(event) {
+            const button = document.getElementById('button');
+            const buttonRect = button.getBoundingClientRect();
+            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            const deltaX = mouseX - buttonCenterX;
+            const deltaY = mouseY - buttonCenterY;
+
+            const maxTilt = 30;
+
+            const tiltX = (deltaY / buttonRect.height) * maxTilt;
+            const tiltY = (-deltaX / buttonRect.width) * maxTilt;
+
+            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        }
+
+        function resetButtonTilt() {
+            const button = document.getElementById('button');
+            button.style.transform = 'rotateX(0) rotateY(0)';
+        }
+
         // Initialize
-        document.addEventListener('DOMContentLoaded', displayUserData);
+        let lastClickTime = 0;
+        const clickInterval = 1000; // 1 second
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayUserData();
+            const button = document.getElementById('button');
+            button.addEventListener('mousedown', incrementCounter);
+            button.addEventListener('mousemove', applyButtonTilt);
+            button.addEventListener('mouseleave', resetButtonTilt);
+            button.addEventListener('mouseup', resetButtonTilt);
+        });
     </script>
-</head>
-<body>
-    <div id="user-info">
-        <p id="user-id"></p>
-        <p id="clicks"></p>
-        <p id="energy"></p>
-        <p id="total-clicks"></p>
-    </div>
 </body>
 </html>
