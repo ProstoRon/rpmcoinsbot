@@ -16,7 +16,6 @@
         }
         
         h1 {
-            right: 20px;
             font-size: 32px;
             margin-bottom: 30px;
             color: #ffffff;
@@ -163,6 +162,12 @@
                 return;
             }
 
+            // Проверка на минимальную длину пароля
+            if (password.length < 6) {
+                errorMessage.textContent = 'Пароль должен содержать как минимум 6 символов.';
+                return;
+            }
+
             const userRef = ref(database, `users/${nickname}`);
             
             try {
@@ -185,7 +190,11 @@
 
                 window.location.href = 'index.html';
             } catch (error) {
-                errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
+                if (error.code === 'auth/weak-password') {
+                    errorMessage.textContent = 'Пароль слишком слабый. Используйте более сложный пароль.';
+                } else {
+                    errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
+                }
             }
         }
 
