@@ -169,21 +169,10 @@
                 console.error('Error reading counter:', error);
             });
         }
-        function updateLocalClicks() {
-            if (!userId) return;
-
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            onValue(userClickssRef, (snapshot) => {
-                const clicks = snapshot.val();
-                document.getElementById('number').innerText = clicks !== null ? clicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-        }
         function showFloatingText(event, text) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+users/${userId}/clicks`;
+            floatingText.innerText = ref(database, `users/${userId}/totalClicks`);
 
             const buttonRect = event.target.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
