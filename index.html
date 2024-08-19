@@ -43,6 +43,18 @@
             transform: scale(0.9); 
         }
 
+        .button.shake {
+            animation: shake 0.5s ease forwards;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
         .counter {
             font-size: 48px; 
             color: #333;
@@ -70,7 +82,8 @@
                 opacity: 0;
                 transform: translateY(-100px);
             }
-            
+        }
+
         @media only screen and (max-width: 768px) {
             .button {
                 width: 320px; 
@@ -172,7 +185,11 @@
                 const currentEnergy = energySnapshot.val();
                 
                 if (currentEnergy <= 0) {
-                    // Если энергии нет, клики не засчитываются
+                    // Если энергии нет, вызываем тряску кнопки
+                    document.getElementById('button').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('button').classList.remove('shake');
+                    }, 500);
                     return;
                 }
 
