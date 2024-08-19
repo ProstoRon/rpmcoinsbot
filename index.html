@@ -53,30 +53,6 @@
             color: #333;
         }
 
-        .fade-text {
-            position: absolute;
-            font-size: 36px;
-            color: rgba(0, 0, 0, 0.7);
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-            animation: fadeOut 1s forwards;
-            pointer-events: none; /* Disable click events on the text */
-        }
-
-        @keyframes fadeOut {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            50% {
-                opacity: 0.7;
-                transform: translateY(-20px);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-40px);
-            }
-        }
-
         @media only screen and (max-width: 768px) {
             .button {
                 width: 200px; 
@@ -154,29 +130,11 @@
                 if (result.committed) {
                     const updatedCount = result.snapshot.val();
                     document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(`Clicks: ${updatedCount}`);
                 }
             }).catch((error) => {
                 console.error('Error updating counter:', error);
             });
         };
-
-        function showFloatingText(text) {
-            const textElement = document.createElement('div');
-            textElement.className = 'fade-text';
-            textElement.innerText = text;
-            document.body.appendChild(textElement);
-
-            // Позиционируем текст в центре кнопки
-            const buttonRect = document.querySelector('.button').getBoundingClientRect();
-            textElement.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-            textElement.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
-
-            // Удаляем текст после завершения анимации
-            textElement.addEventListener('animationend', () => {
-                textElement.remove();
-            });
-        }
 
         function updateLocalCounter() {
             if (!userId) return; // Защита от обновления до загрузки пользователя
