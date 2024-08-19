@@ -249,4 +249,34 @@
                             return (currentClicks || 0) + 1;
                         }).then(() => {
                             runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                                return (current
+                                return (currentTotalClicks || 0) + 1;
+                            }).catch((error) => {
+                                console.error('Ошибка при обновлении общего количества кликов:', error);
+                            });
+                        }).catch((error) => {
+                            console.error('Ошибка при обновлении кликов:', error);
+                        });
+                    }
+                }).catch((error) => {
+                    console.error('Ошибка при обновлении энергии:', error);
+                });
+            }).catch((error) => {
+                console.error('Ошибка при чтении энергии:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = getQueryParam('user_id');
+            if (userId) {
+                displayUserInfo(userId);
+                initializeUser(userId);
+                startEnergyRegen(userId);
+
+                document.getElementById('button').addEventListener('click', incrementCounter);
+            } else {
+                console.error('Отсутствует параметр user_id');
+            }
+        });
+    </script>
+</body>
+</html>
