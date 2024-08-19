@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>RPMcoinbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             display: flex;
@@ -32,7 +33,8 @@
             cursor: pointer;
             margin-bottom: 20px;
             transition: transform 0.1s ease, box-shadow 0.1s ease; 
-            position: relative; /* Это необходимо для позиционирования текста внутри кнопки */
+            -webkit-tap-highlight-color: transparent; /* Отключает выделение на мобильных устройствах */
+            outline: none; /* Убирает обводку при фокусе */
         }
 
         .button:active {
@@ -54,30 +56,6 @@
             color: #333;
         }
 
-        .fade-text {
-            position: absolute;
-            font-size: 36px;
-            color: rgba(0, 0, 0, 0.7);
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-            animation: fadeOut 1s forwards;
-            pointer-events: none; /* Disable click events on the text */
-        }
-
-        @keyframes fadeOut {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            50% {
-                opacity: 0.7;
-                transform: translateY(-20px);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-40px);
-            }
-        }
-
         @media only screen and (max-width: 768px) {
             .button {
                 width: 200px; 
@@ -92,7 +70,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" onclick="handleClick(event)"></div>
+        <div class="button" onclick="incrementCounter()"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
@@ -137,16 +115,12 @@
             document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
         }
 
-        function handleClick(event) {
-            // Вибрация на 50 миллисекунд
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-            incrementCounter(event);
-        }
-
-        window.incrementCounter = function(event) {
+        window.incrementCounter = function() {
             if (!userId) return; // Защита от нажатия до загрузки пользователя
+
+            if ("vibrate" in navigator) {
+                navigator.vibrate(50); // Вибрация на 50 миллисекунд
+            }
 
             const userClicksRef = ref(database, `users/${userId}/totalClicks`);
             runTransaction(userClicksRef, (currentValue) => {
@@ -155,33 +129,11 @@
                 if (result.committed) {
                     const updatedCount = result.snapshot.val();
                     document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                    showFloatingText(`Clicks: ${updatedCount}`, event);
                 }
             }).catch((error) => {
                 console.error('Error updating counter:', error);
             });
         };
-
-        function showFloatingText(text, event) {
-            const textElement = document.createElement('div');
-            textElement.className = 'fade-text';
-            textElement.innerText = text;
-
-            // Позиционируем текст относительно позиции клика
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
-
-            textElement.style.left = `${x}px`;
-            textElement.style.top = `${y}px`;
-
-            event.target.appendChild(textElement);
-
-            // Удаляем текст после завершения анимации
-            textElement.addEventListener('animationend', () => {
-                textElement.remove();
-            });
-        }
 
         function updateLocalCounter() {
             if (!userId) return; // Защита от обновления до загрузки пользователя
