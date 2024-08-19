@@ -141,7 +141,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" id="button" onclick="incrementCounter(event)"></div>
+        <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">0/1000</div>
     </div>
@@ -167,8 +167,8 @@
         const database = getDatabase(app);
 
         let userId = null;
-        const energyRegenInterval = 2000;
-        const clickInterval = 100;
+        const energyRegenInterval = 2000; // Интервал восстановления энергии
+        const clickInterval = 100; // Интервал кликов
         let lastClickTime = 0;
 
         function checkCookie() {
@@ -213,7 +213,9 @@
             }, energyRegenInterval);
         }
 
-        window.incrementCounter = function(event) {
+        window.addEventListener('click', incrementCounter);
+
+        function incrementCounter(event) {
             const currentTime = Date.now();
             if (!userId || (currentTime - lastClickTime < clickInterval)) return;
 
@@ -263,7 +265,7 @@
                     console.error('Ошибка при списании энергии:', error);
                 });
             }, { onlyOnce: true });
-        };
+        }
 
         function showFloatingText(event, amount) {
             const floatingText = document.createElement('div');
