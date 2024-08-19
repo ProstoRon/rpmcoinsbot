@@ -9,7 +9,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to bottom right, #8e2de2, #4a00e0);
+            background: linear-gradient(to bottom right, #6a1b9a, #ab47bc); 
             font-family: Arial, sans-serif;
             color: #fff;
         }
@@ -20,14 +20,14 @@
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
         }
 
         h1 {
             font-size: 32px;
             margin-bottom: 30px;
-            color: #4a00e0;
+            color: #6a1b9a;
         }
 
         .input {
@@ -42,15 +42,15 @@
         }
 
         .input:focus {
-            border-color: #4a00e0;
-            box-shadow: 0 6px 12px rgba(74, 0, 224, 0.2);
+            border-color: #6a1b9a;
+            box-shadow: 0 6px 12px rgba(106, 27, 154, 0.2);
             outline: none;
         }
 
         .button {
             width: 100%;
             padding: 20px;
-            background-color: #4a00e0;
+            background-color: #6a1b9a;
             color: white;
             border: none;
             font-size: 24px;
@@ -61,11 +61,11 @@
         }
 
         .button:hover {
-            background-color: #6c1db3;
+            background-color: #ab47bc;
         }
 
         .button:active {
-            background-color: #3e00b0;
+            background-color: #8e24aa;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
@@ -97,7 +97,7 @@
 <body>
     <div class="container">
         <h1>Вход в систему</h1>
-        <input type="text" id="userIdInput" class="input" placeholder="Введите ник">
+        <input type="text" id="userIdInput" class="input" placeholder="Введите ID">
         <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
         <button class="button" id="loginButton">Войти</button>
         <div id="error-message"></div>
@@ -106,6 +106,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -120,6 +121,7 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
 
         function login() {
             const userId = document.getElementById('userIdInput').value.trim();
@@ -127,32 +129,24 @@
             const errorMessage = document.getElementById('error-message');
 
             if (!userId || !password) {
-                errorMessage.innerHTML = 'Пожалуйста, введите ник и пароль.';
+                errorMessage.textContent = 'Пожалуйста, введите ID и пароль.';
                 return;
             }
 
-            console.log('Попытка входа пользователя с ником:', userId);
+            console.log('Попытка входа пользователя с ID:', userId);
 
-            const userRef = ref(database, `users/${userId}`);
-            get(userRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    if (userData.password === password) {
-                        console.log('Пользователь успешно вошёл.');
-                        document.cookie = `userId=${userId}; path=/`;
-                        window.location.href = 'index.html';
-                    } else {
-                        console.log('Неверный пароль.');
-                        errorMessage.innerHTML = 'Неверный пароль.';
-                    }
-                } else {
-                    console.log('Пользователь не найден.');
-                    errorMessage.innerHTML = `Такой аккаунт не существует. <a href="https://prostoron.github.io/rpmcoinsbot/login">Зарегистрируйтесь здесь</a>.`;
-                }
-            }).catch((error) => {
-                console.error('Ошибка входа:', error);
-                errorMessage.innerHTML = 'Ошибка при входе. Подробности в консоли.';
-            });
+            // Замените этот код на ваш метод аутентификации
+            // Это просто пример использования Firebase Authentication с email и password
+            signInWithEmailAndPassword(auth, userId, password)
+                .then((userCredential) => {
+                    console.log('Вход выполнен успешно:', userCredential);
+                    document.cookie = `userId=${userId}; path=/`;
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error('Ошибка входа:', error);
+                    errorMessage.textContent = `Ошибка входа: ${error.message}`;
+                });
         }
 
         // Привязываем функцию к кнопке входа после загрузки
