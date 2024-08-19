@@ -11,34 +11,61 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            background: linear-gradient(to right, #ff7e5f, #feb47b); 
             font-family: Arial, sans-serif;
             overflow: hidden;
         }
 
         .container {
-            position: relative;
+            display: block;
             text-align: center;
+            position: relative;
         }
 
         .button {
-            width: 320px;
-            height: 320px;
-            background-image: url('https://i.imgur.com/dtJW1Wu.png');
-            background-size: cover;
-            background-position: center;
+            width: 500px; 
+            height: 500px; 
+            background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+            background-size: cover; 
+            background-position: center; 
             border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            position: relative;
             margin-bottom: 20px;
-            display: inline-block;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+        }
+
+        .button:active {
+            transform: scale(0.9); 
         }
 
         .counter {
-            font-size: 48px;
+            font-size: 48px; 
             color: #333;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        }
+
+        .energy-counter {
+            font-size: 24px;
+            font-family: 'Kanit', sans-serif; 
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd70f;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .user-info {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 20px;
         }
 
         .floating-text {
@@ -64,14 +91,51 @@
         }
 
         @media only screen and (max-width: 768px) {
+            body {
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
+
             .button {
-                width: 240px;
-                height: 240px;
+                width: 320px; 
+                height: 320px; 
+                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+                background-size: cover; 
+                background-position: center; 
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                margin: 0 auto;
             }
 
             .counter {
-                font-size: 36px;
+                font-size: 36px; 
+                color: #333;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+                position: absolute;
+                top: 10%;
+                left: 50%;
+                transform: translateX(-50%);
             }
+
+            .energy-counter {
+                font-size: 24px;
+                font-family: 'Kanit', sans-serif;
+                position: absolute;
+                bottom: 10%;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #ffd70f;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+           }
         }
     </style>
 </head>
@@ -79,7 +143,9 @@
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
+        <div class="energy-counter" id="energy-counter">0/1000</div>
     </div>
+    <div class="user-info" id="user-info"></div>
 
     <!-- Подключение Firebase -->
     <script type="module">
@@ -101,15 +167,19 @@
         const database = getDatabase(app);
 
         let userId = null;
+        const energyRegenInterval = 2000;
         const clickInterval = 100;
         let lastClickTime = 0;
 
         function checkCookie() {
             userId = getCookie('userId');
+            console.log("User ID from cookie:", userId); // Debugging line
             if (!userId) {
                 window.location.href = 'register.html';
             } else {
                 updateUserData();
+                displayUserInfo(userId);
+                startEnergyRegen();
             }
         }
 
@@ -119,32 +189,80 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
+        function displayUserInfo(userId) {
+            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
+        }
+
+        function startEnergyRegen() {
+            setInterval(() => {
+                if (userId) {
+                    const userEnergyRef = ref(database, `users/${userId}/energy`);
+                    const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
+
+                    onValue(userMaxEnergyRef, (snapshot) => {
+                        const maxEnergy = snapshot.val() || 1000;
+                        console.log("Max energy:", maxEnergy); // Debugging line
+                        runTransaction(userEnergyRef, (currentEnergy) => {
+                            if (currentEnergy === null) return 0;
+                            return Math.min(currentEnergy + 1, maxEnergy);
+                        }).catch((error) => {
+                            console.error('Ошибка при восстановлении энергии:', error);
+                        });
+                    });
+                }
+            }, energyRegenInterval);
+        }
+
         window.incrementCounter = function(event) {
             const currentTime = Date.now();
             if (!userId || (currentTime - lastClickTime < clickInterval)) return;
 
             lastClickTime = currentTime;
 
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userClicksRef = ref(database, `users/${userId}/clicks`);
             const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            runTransaction(userClicksRef, (currentClicks) => {
-                return (currentClicks || 0) + 1;
-            }).then(() => {
-                runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                    return (currentTotalClicks || 0) + 1;
-                }).then((totalClicksResult) => {
-                    if (totalClicksResult.committed) {
-                        const updatedCount = totalClicksResult.snapshot.val();
-                        document.getElementById('counter').innerText = updatedCount;
-                        showFloatingText(event, 1);
+            onValue(userEnergyRef, (energySnapshot) => {
+                const currentEnergy = energySnapshot.val();
+                
+                console.log("Current energy:", currentEnergy); // Debugging line
+
+                if (currentEnergy <= 0) {
+                    const button = document.getElementById('button');
+                    button.classList.add('disabled');
+                    setTimeout(() => button.classList.remove('disabled'), 1000);
+                    return;
+                }
+
+                runTransaction(userEnergyRef, (energy) => {
+                    if (energy === null) return 0;
+                    if (energy <= 0) return energy;
+                    return energy - 1;
+                }).then((energyResult) => {
+                    if (energyResult.committed) {
+                        runTransaction(userClicksRef, (currentClicks) => {
+                            return (currentClicks || 0) + 1;
+                        }).then(() => {
+                            runTransaction(userTotalClicksRef, (currentTotalClicks) => {
+                                return (currentTotalClicks || 0) + 1;
+                            }).then((totalClicksResult) => {
+                                if (totalClicksResult.committed) {
+                                    const updatedCount = totalClicksResult.snapshot.val();
+                                    document.getElementById('counter').innerText = updatedCount;
+                                    showFloatingText(event, 1);
+                                }
+                            }).catch((error) => {
+                                console.error('Ошибка при обновлении счетчика кликов:', error);
+                            });
+                        }).catch((error) => {
+                            console.error('Ошибка при обновлении кликов:', error);
+                        });
                     }
                 }).catch((error) => {
-                    console.error('Ошибка при обновлении счётчика кликов:', error);
+                    console.error('Ошибка при списании энергии:', error);
                 });
-            }).catch((error) => {
-                console.error('Ошибка при обновлении кликов:', error);
-            });
+            }, { onlyOnce: true });
         };
 
         function showFloatingText(event, amount) {
@@ -163,10 +281,22 @@
         function updateUserData() {
             if (userId) {
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxenergy`);
 
                 onValue(userTotalClicksRef, (snapshot) => {
-                    const totalClicks = snapshot.val() || 0;
+                    const totalClicks = snapshot.val();
+                    console.log("Total clicks:", totalClicks); // Debugging line
                     document.getElementById('counter').innerText = totalClicks;
+                });
+
+                onValue(userEnergyRef, (energySnapshot) => {
+                    const energy = energySnapshot.val();
+                    onValue(userMaxEnergyRef, (maxEnergySnapshot) => {
+                        const maxEnergy = maxEnergySnapshot.val();
+                        console.log("Energy:", energy, "Max Energy:", maxEnergy); // Debugging line
+                        document.getElementById('energy-counter').innerText = `Energy: ${energy || 0}/${maxEnergy || 1000}`;
+                    });
                 });
             }
         }
