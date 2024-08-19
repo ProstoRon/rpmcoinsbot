@@ -3,134 +3,149 @@
 <head>
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(to right, #ff7e5f, #feb47b); 
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(to right, #ff7e5f, #feb47b); 
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
 
-        .container {
-            display: block;
-            text-align: center;
-            position: relative;
-        }
+.container {
+    display: block;
+    text-align: center;
+    position: relative;
+}
 
-        .button {
-            width: 500px; 
-            height: 500px; 
-            background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
-            background-size: cover; 
-            background-position: center; 
-            border: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease; 
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            position: relative; /* Для позиционирования всплывающего текста */
-        }
+.button {
+    width: 500px; 
+    height: 500px; 
+    background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+    background-size: cover; 
+    background-position: center; 
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: transform 0.1s ease, box-shadow 0.1s ease; 
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    position: relative; /* Для позиционирования всплывающего текста */
+}
 
-        .button:active {
-            transform: scale(0.9); 
-        }
+.button:active {
+    transform: scale(0.9); 
+}
 
-        .button.shake {
-            animation: shake 0.5s ease forwards;
-        }
+.button.shake {
+    animation: shake 0.5s ease forwards;
+}
 
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            10% { transform: translateX(-15px); }
-            20% { transform: translateX(10px); }
-            30% { transform: translateX(-10px); }
-            40% { transform: translateX(5px); }
-            50% { transform: translateX(-5px); }
-            60% { transform: translateX(0); }
-            100% { transform: translateX(0); }
-        }
+@keyframes shake {
+    0% { transform: translateX(0); }
+    10% { transform: translateX(-15px); }
+    20% { transform: translateX(10px); }
+    30% { transform: translateX(-10px); }
+    40% { transform: translateX(5px); }
+    50% { transform: translateX(-5px); }
+    60% { transform: translateX(0); }
+    100% { transform: translateX(0); }
+}
 
-        .counter {
-            font-size: 48px; 
-            color: #333;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-        }
+.counter {
+    font-size: 48px; 
+    color: #333;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+}
 
-        .floating-text {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
-            font-weight: bold;
-            animation: floatUp 1s ease forwards;
-            pointer-events: none; /* Исключает взаимодействие с этим текстом */
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
-        }
+.energy-counter {
+    font-size: 24px;
+    font-family: 'Kanit', sans-serif; /* Шрифт Kanit для Energy */
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
 
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px);
-            }
-        }
+.floating-text {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 28px;
+    font-weight: bold;
+    animation: floatUp 1s ease forwards;
+    pointer-events: none; /* Исключает взаимодействие с этим текстом */
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Добавление переходов */
+}
 
-        @media only screen and (max-width: 768px) {
-            body {
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-            }
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+}
 
-            .button {
-                width: 320px; 
-                height: 320px; 
-                background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
-                background-size: cover; 
-                background-position: center; 
-                border: none;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-                transition: transform 0.1s ease, box-shadow 0.1s ease;
-                -webkit-tap-highlight-color: transparent;
-                outline: none;
-                margin: 0 auto; /* Центрирование кнопки */
-            }
+@media only screen and (max-width: 768px) {
+    body {
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
 
-            .counter {
-                font-size: 36px; 
-                color: #333;
-                font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-                position: absolute;
-                top: 10%;
-                left: 50%;
-                transform: translateX(-50%);
-            }
+    .button {
+        width: 320px; 
+        height: 320px; 
+        background-image: url('https://i.imgur.com/dtJW1Wu.png'); 
+        background-size: cover; 
+        background-position: center; 
+        border: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+        margin: 0 auto; /* Центрирование кнопки */
+    }
 
-            .energy-counter {
-                font-size: 24px;
-                position: absolute;
-                bottom: 10%;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-        }
+    .counter {
+        font-size: 36px; 
+        color: #333;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        position: absolute;
+        top: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .energy-counter {
+        font-size: 24px;
+        font-family: 'Kanit', sans-serif; /* Шрифт Kanit для Energy */
+        position: absolute;
+        bottom: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #333;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+}
 
     </style>
 </head>
