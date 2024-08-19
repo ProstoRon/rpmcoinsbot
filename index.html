@@ -136,8 +136,6 @@
         const database = getDatabase(app);
 
         let userId = null;
-        let lastClickTime = 0;
-        const clickInterval = 1000; // Интервал между кликами в миллисекундах
 
         function getParameterByName(name) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -159,18 +157,9 @@
         window.incrementCounter = async function(event) {
             if (!userId) return;
 
-            const currentTime = Date.now();
-            if (currentTime - lastClickTime < clickInterval) return;
-
-            lastClickTime = currentTime;
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
             try {
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
                 await runTransaction(userTotalClicksRef, (currentValue) => {
                     return (currentValue || 0) + 1;
                 });
