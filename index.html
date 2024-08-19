@@ -1,134 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RPMcoinbot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Check</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background: linear-gradient(to right, #ff7e5f, #feb47b); 
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .container {
-            display: block;
-            text-align: center;
-            position: relative;
-        }
-
-        .button {
-            width: 500px; 
-            height: 500px; 
-            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-            background-size: cover; 
-            background-position: center; 
-            border: none;
+            padding: 0;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: linear-gradient(135deg, #6a0dad, #a63dbf);
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            color: #fff;
+        }
+        .button {
+            background: url('https://i.imgur.com/dtJW1Wu.png') no-repeat center center;
+            background-size: contain;
+            width: 200px;
+            height: 200px;
+            border: none;
             cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
         }
-
-        .button:active {
-            transform: scale(0.9);
-        }
-
         .counter {
-            font-size: 48px; 
-            color: #333;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-        }
-
-        .energy {
+            margin-top: 20px;
             font-size: 24px;
-            color: #444;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .floating-text {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
-            font-weight: bold;
-            animation: floatUp 1s ease forwards;
-            pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px);
-            }
-        }
-
-        .user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .rounded-image {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            object-fit: cover;
-        }
-
-        @media only screen and (max-width: 768px) {
-            .button {
-                width: 320px; 
-                height: 320px; 
-                bottom: -200px;
-            }
-            
-            .counter {
-                font-size: 36px; 
-                position: absolute;
-                bottom: 300px;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="button" id="button" onclick="incrementCounter(event)"></div>
-        <div class="counter" id="counter">0</div>
-        <div class="energy" id="energy">Energy: 100</div>
-    </div>
     <div class="user-info" id="user-info"></div>
-    <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
+    <div class="counter" id="counter">0</div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -144,167 +55,39 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Получаем ID пользователя из URL
-        function getUserIdFromURL() {
+        function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('user_id'); // user_id - параметр запроса, содержащий Telegram ID
+            return urlParams.get(param);
         }
 
-        let userId = getUserIdFromURL();
-        let lastClickTime = 0;
-        const clickInterval = 100; // Интервал между кликами в миллисекундах
+        function handleTelegramUser() {
+            const source = getQueryParam('source');
+            const telegramId = getQueryParam('tg_id'); // Здесь предполагается, что Telegram ID передаётся как параметр
 
-        function updateLocalData() {
-            if (!userId) return;
-
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                document.getElementById('energy').innerText = `Energy: ${energy !== null ? energy : 100}`;
-            }, (error) => {
-                console.error('Error reading energy:', error);
-            });
-
-            document.getElementById('user-info').innerText = `Ваш ID: ${userId}`;
-        }
-
-        function incrementCounter(event) {
-            const currentTime = Date.now();
-            if (!userId || (currentTime - lastClickTime < clickInterval)) return;
-
-            lastClickTime = currentTime;
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(50); // Вибрация на 50 миллисекунд
-            }
-
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-
-            onValue(userClicksRef, (snapshot) => {
-                const clicks = snapshot.val() || 1;
-
-                runTransaction(userTotalClicksRef, (currentValue) => {
-                    return (currentValue || 0) + clicks;
-                }).then((result) => {
-                    if (result.committed) {
-                        const updatedCount = result.snapshot.val();
-                        document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                        showFloatingText(event, clicks);
-                    }
-                }).catch((error) => {
-                    console.error('Error updating counter:', error);
-                });
-            });
-
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val() || 100;
-                const newEnergy = Math.max(0, energy - 10);
-
-                userEnergyRef.set(newEnergy).then(() => {
-                    document.getElementById('energy').innerText = `Energy: ${newEnergy}`;
-                }).catch((error) => {
-                    console.error('Error updating energy:', error);
-                });
-            });
-        }
-
-        function showFloatingText(event, clicks) {
-            if (!userId) return;
-
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.innerText = `+${clicks}`;
-
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
-
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-
-            event.target.appendChild(floatingText);
-
-            floatingText.addEventListener('animationend', () => {
-                floatingText.remove();
-            });
-        }
-
-        function applyButtonTilt(event) {
-            const button = document.getElementById('button');
-            const buttonRect = button.getBoundingClientRect();
-            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
-
-            const mouseX = event.clientX;
-            const mouseY = event.clientY;
-
-            const deltaX = mouseX - buttonCenterX;
-            const deltaY = mouseY - buttonCenterY;
-
-            const maxTilt = 30;
-
-            const tiltX = (deltaY / buttonRect.height) * maxTilt;
-            const tiltY = (deltaX / buttonRect.width) * maxTilt;
-
-            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-        }
-
-        function resetButtonTilt() {
-            const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        }
-
-        function handleMouseDown(event) {
-            applyButtonTilt(event);
-            document.addEventListener('mousemove', applyButtonTilt);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        function handleMouseUp() {
-            resetButtonTilt();
-            document.removeEventListener('mousemove', applyButtonTilt);
-            document.removeEventListener('mouseup', handleMouseUp);
-        }
-
-        function handleTouchStart(event) {
-            applyButtonTilt(event.touches[0]);
-            document.addEventListener('touchmove', applyButtonTilt);
-            document.addEventListener('touchend', handleTouchEnd);
-        }
-
-        function handleTouchEnd() {
-            resetButtonTilt();
-            document.removeEventListener('touchmove', applyButtonTilt);
-            document.removeEventListener('touchend', handleTouchEnd);
-        }
-
-        document.getElementById('button').addEventListener('mousedown', handleMouseDown);
-        document.getElementById('button').addEventListener('touchstart', handleTouchStart);
-
-        document.addEventListener('DOMContentLoaded', updateLocalData);
-
-        function deleteCookie(name) {
-            document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        }
-
-        function deleteAllCookies() {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].split('=');
-                deleteCookie(cookie[0].trim());
+            if (source === 'telegram' && telegramId) {
+                console.log('Telegram ID:', telegramId);
+                fetchUserData(telegramId);
+            } else {
+                console.log('Not from Telegram or no Telegram ID provided');
             }
         }
+
+        function fetchUserData(telegramId) {
+            const userRef = ref(database, `users/${telegramId}`);
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('user-info').innerText = `User ID: ${telegramId}`;
+                    document.getElementById('counter').innerText = userData.totalClicks || 0;
+                } else {
+                    console.log('User data not found');
+                }
+            }, (error) => {
+                console.error('Error fetching user data:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', handleTelegramUser);
     </script>
 </body>
 </html>
