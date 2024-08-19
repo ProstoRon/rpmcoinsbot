@@ -37,6 +37,7 @@
             -webkit-tap-highlight-color: transparent;
             outline: none;
             position: relative; /* Для позиционирования всплывающего текста */
+            pointer-events: auto; /* Убедитесь, что это свойство установлено */
         }
 
         .button:active {
@@ -221,6 +222,8 @@
                 deleteCookie(cookie[0].trim());
             }
         }
+
+        document.querySelector('.button').addEventListener('touchstart', incrementCounter);
     </script>
 </body>
 </html>
