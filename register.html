@@ -105,7 +105,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -121,6 +121,26 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        // Генерация уникального пятизначного кода
+        function generateUniqueCode() {
+            return new Promise((resolve) => {
+                const codesRef = ref(database, 'codes/');
+                get(codesRef).then((snapshot) => {
+                    let code;
+                    let unique = false;
+                    while (!unique) {
+                        code = Math.floor(10000 + Math.random() * 90000).toString();
+                        if (!snapshot.hasChild(code)) {
+                            unique = true;
+                        }
+                    }
+                    resolve(code);
+                }).catch((error) => {
+                    console.error('Ошибка генерации кода:', error);
+                });
+            });
+        }
+
         function register() {
             const username = document.getElementById('usernameInput').value.trim();
             const password = document.getElementById('passwordInput').value.trim();
@@ -133,31 +153,36 @@
 
             console.log('Попытка зарегистрировать пользователя с ником:', username);
 
-            const userRef = ref(database, `users/${username}`);
-            get(userRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    console.log('Ник уже используется.');
-                    errorMessage.textContent = `Ник ${username} уже зарегистрирован.`;
-                } else {
-                    // Создание нового пользователя в базе данных
-                    set(userRef, {
-                        clicks: 1,
-                        energy: 1000,
-                        maxenergy: 1000,
-                        totalClicks: 0,
-                        password: password
+            generateUniqueCode().then((code) => {
+                const userRef = ref(database, `users/${username}`);
+                const codeRef = ref(database, `codes/${code}`);
+                
+                // Запись данных пользователя
+                set(userRef, {
+                    clicks: 1,
+                    energy: 1000,
+                    maxenergy: 1000,
+                    totalClicks: 0,
+                    password: password
+                }).then(() => {
+                    // Запись уникального кода
+                    set(codeRef, {
+                        id: code
                     }).then(() => {
                         console.log('Пользователь успешно зарегистрирован.');
                         document.cookie = `userId=${username}; path=/`;
                         window.location.href = 'index.html';
                     }).catch((error) => {
-                        console.error('Ошибка регистрации:', error);
-                        errorMessage.textContent = 'Ошибка при регистрации. Подробности в консоли.';
+                        console.error('Ошибка записи кода:', error);
+                        errorMessage.textContent = 'Ошибка при записи кода. Подробности в консоли.';
                     });
-                }
+                }).catch((error) => {
+                    console.error('Ошибка регистрации:', error);
+                    errorMessage.textContent = 'Ошибка при регистрации. Подробности в консоли.';
+                });
             }).catch((error) => {
-                console.error('Ошибка проверки:', error);
-                errorMessage.textContent = 'Ошибка при проверке никнейма. Подробности в консоли.';
+                console.error('Ошибка генерации кода:', error);
+                errorMessage.textContent = 'Ошибка при генерации кода. Подробности в консоли.';
             });
         }
 
