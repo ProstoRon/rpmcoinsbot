@@ -4,128 +4,19 @@
     <title>Регистрация</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(to bottom right, #8e2de2, #4a00e0); /* Фиолетовый градиент */
-            font-family: Arial, sans-serif;
-            color: #fff;
-        }
-
-        .container {
-            text-align: center;
-            background: #fff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            max-width: 500px;
-            width: 100%;
-        }
-
-        h1 {
-            font-size: 32px;
-            margin-bottom: 30px;
-            color: #8e2de2;
-        }
-
-        .input-container {
-            position: relative;
-            width: calc(100% - 44px);
-            margin-bottom: 20px;
-        }
-
-        .input {
-            width: 100%;
-            padding: 20px;
-            font-size: 24px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-
-        .input:focus {
-            border-color: #8e2de2;
-            box-shadow: 0 6px 12px rgba(142, 45, 226, 0.2);
-            outline: none;
-        }
-
-        .input-container.password {
-            position: relative;
-        }
-
-        .password-eye {
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            cursor: pointer;
-            font-size: 24px;
-            color: #8e2de2;
-        }
-
-        .button {
-            width: 100%;
-            padding: 20px;
-            background-color: #8e2de2;
-            color: white;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .button:hover {
-            background-color: #6f1ccf;
-        }
-
-        .button:active {
-            background-color: #5b13a3;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        #error-message {
-            color: #d9534f;
-            font-size: 24px;
-            margin-top: 20px;
-        }
-
-        @media only screen and (max-width: 600px) {
-            .container {
-                padding: 30px;
-            }
-
-            .input {
-                font-size: 20px;
-            }
-
-            .button {
-                font-size: 20px;
-            }
-
-            #error-message {
-                font-size: 20px;
-            }
-        }
+        /* Ваши стили */
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Регистрация</h1>
         <div class="input-container">
-            <input type="text" id="userIdInput" class="input" placeholder="Введите ник" required>
+            <input type="text" id="userIdInput" class="input" placeholder="Введите никнейм">
         </div>
-        
         <div class="input-container password">
-            <input type="password" id="passwordInput" class="input" placeholder="Введите пароль" required>
+            <input type="password" id="passwordInput" class="input" placeholder="Введите пароль">
             <i class="fas fa-eye password-eye" id="togglePassword"></i>
         </div>
-        
         <button class="button" id="registerButton">Регистрация</button>
         <div id="error-message"></div>
     </div>
@@ -136,14 +27,7 @@
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
+            // Ваши настройки
         };
 
         const app = initializeApp(firebaseConfig);
@@ -160,30 +44,25 @@
                 return;
             }
 
-            // Генерация случайного ID
-            const userId = Math.random().toString(36).substring(2, 7).toUpperCase();
+            const email = `${nickname}@example.com`;
 
-            // Проверка существующего пользователя
-            const userRef = ref(database, `users/${nickname}`);
-            set(userRef, {
-                clicks: 1,
-                energy: 1000,
-                maxenergy: 1000,
-                totalClicks: 0,
-                password: password,
-                id: userId
-            }).then(() => {
-                return createUserWithEmailAndPassword(auth, `${nickname}@example.com`, password);
-            }).then((userCredential) => {
-                console.log('User registered:', userCredential.user.uid);
-                window.location.href = 'index.html';
-            }).catch((error) => {
-                console.error('Error registering user:', error);
-                errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
-            });
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const userId = userCredential.user.uid;
+                    set(ref(database, `users/${nickname}`), {
+                        clicks: 0,
+                        energy: 1000,
+                        maxenergy: 1000,
+                        totalClicks: 0,
+                        password: password
+                    });
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    errorMessage.textContent = `Ошибка регистрации: ${error.message}`;
+                });
         }
 
-        // Переключение видимости пароля
         const passwordInput = document.getElementById('passwordInput');
         const togglePassword = document.getElementById('togglePassword');
 
