@@ -10,8 +10,9 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #f0f0f0;
+            background: linear-gradient(to right, #6a1b9a, #ab47bc); /* Градиентный фиолетовый фон */
             font-family: Arial, sans-serif;
+            text-align: center;
         }
 
         .button {
@@ -35,6 +36,14 @@
 
         .button:active {
             transform: scale(0.9); /* Эффект сжатия кнопки при нажатии */
+        }
+
+        .counter {
+            font-size: 48px; 
+            color: #fff; /* Цвет текста счетчика */
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            margin-top: 20px;
         }
 
         .floating-text {
@@ -64,44 +73,53 @@
                 width: 150px; 
                 height: 150px; 
             }
+
+            .counter {
+                font-size: 36px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="button" id="button"></div>
+    <div class="container">
+        <div class="button" id="button"></div>
+        <div class="counter" id="counter">0</div>
+    </div>
     <script>
         const button = document.getElementById('button');
-        
-        // Функция для отображения анимации всплывающего текста
+        const counterElement = document.getElementById('counter');
+
+        // Обработчик события клика на кнопку
+        button.addEventListener('click', () => {
+            // Логика для обновления счетчика
+            // Например, увеличиваем значение счетчика на 1
+            const currentCount = parseInt(counterElement.innerText, 10);
+            counterElement.innerText = currentCount + 1;
+
+            // Пример функции для отображения анимации всплывающего текста
+            showFloatingText(event, 1);
+        });
+
+        // Функция для отображения всплывающего текста
         function showFloatingText(event, clicks) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.innerText = `+${clicks}`;
 
-            const buttonRect = event.target.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
             const y = event.clientY - buttonRect.top;
 
             floatingText.style.left = `${x}px`;
             floatingText.style.top = `${y}px`;
 
-            event.target.appendChild(floatingText);
+            button.appendChild(floatingText);
 
             // Удаление элемента после завершения анимации
             floatingText.addEventListener('animationend', () => {
                 floatingText.remove();
             });
         }
-
-        // Обработка кликов
-        button.addEventListener('click', function(event) {
-            showFloatingText(event, 1); // Пример значения кликов
-        });
-
-        // Обработка касаний на мобильных устройствах
-        button.addEventListener('touchstart', function(event) {
-            showFloatingText(event, 1); // Пример значения кликов
-        });
     </script>
 </body>
 </html>
