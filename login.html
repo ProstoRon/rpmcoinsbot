@@ -160,10 +160,7 @@
                 return;
             }
 
-            console.log('Попытка входа пользователя с никнеймом:', nickname);
-
-            // Замените этот код на ваш метод аутентификации
-            // Используем email в качестве уникального идентификатора для входа
+            // Сформируем email для Firebase
             const email = `${nickname}@example.com`;
 
             signInWithEmailAndPassword(auth, email, password)
