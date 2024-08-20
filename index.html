@@ -242,7 +242,7 @@
             floatingText.className = 'floating-text';
             floatingText.innerText = `+${clicks}`;
 
-            const buttonRect = event.target.getBoundingClientRect();
+            const buttonRect = document.getElementById('button').getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
             const y = event.clientY - buttonRect.top;
 
@@ -305,7 +305,6 @@
                 console.error('Error updating energy:', error);
             }
         }, 2000); // обновление каждые 2 секунды
-
     </script>
 </body>
 </html>
