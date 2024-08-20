@@ -243,10 +243,14 @@ async function incrementCounter(x, y) {
 
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `Clicks: ${currentClicks}`;
+            floatingText.innerText = `+${currentClicks}`;
             floatingText.style.position = 'absolute';
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
+
+            // Учет скролла страницы и родительских элементов
+            const rect = document.getElementById('button').getBoundingClientRect();
+            floatingText.style.left = `${x + rect.left}px`;
+            floatingText.style.top = `${y + rect.top}px`;
+
             document.body.appendChild(floatingText);
             setTimeout(() => floatingText.remove(), 1000);
         }
