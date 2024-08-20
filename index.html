@@ -218,7 +218,7 @@
             });
         }
 
-        async function incrementCounter() {
+        async function incrementCounter(x, y) {
             if (!userId) return;
 
             try {
@@ -227,7 +227,7 @@
 
                 const energySnapshot = await get(userEnergyRef);
                 const energy = energySnapshot.val() || 0;
-                
+
                 if (energy > 0) {
                     const newEnergy = energy - 1;
                     const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
@@ -242,6 +242,8 @@
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
                     floatingText.innerText = '+1';
+                    floatingText.style.left = `${x}px`;
+                    floatingText.style.top = `${y}px`;
                     document.body.appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
@@ -273,7 +275,7 @@
                 } catch (error) {
                     console.error('Error updating energy:', error);
                 }
-            }, 3000); // обновление энергии каждые 2 секунды
+            }, 2000); // обновление энергии каждые 2 секунды
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -288,7 +290,12 @@
             updateLocalEnergy();
             startEnergyRegeneration();
 
-            document.getElementById('button').addEventListener('click', incrementCounter);
+            document.getElementById('button').addEventListener('click', (event) => {
+                const rect = event.target.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                incrementCounter(x, y);
+            });
         });
     </script>
 </body>
