@@ -304,7 +304,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = event.target.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
+        // Установка динамического 3D-наклона
+        const button = event.target;
+        const buttonRect = button.getBoundingClientRect();
+        const buttonCenterX = buttonRect.width / 2;
+        const buttonCenterY = buttonRect.height / 2;
+        const offsetX = x - buttonCenterX;
+        const offsetY = y - buttonCenterY;
+        const rotateX = (offsetY / buttonCenterY) * 20; // Максимальный угол наклона по оси X
+        const rotateY = -(offsetX / buttonCenterX) * 20; // Максимальный угол наклона по оси Y
+
+        button.style.setProperty('--rotate-x', `${rotateX}deg`);
+        button.style.setProperty('--rotate-y', `${rotateY}deg`);
+
         incrementCounter(x, y);
+
+        // Удаление класса после анимации
+        setTimeout(() => {
+            button.classList.remove('clicked');
+        }, 200); // время, соответствующее продолжительности анимации
     });
 });
     </script>
