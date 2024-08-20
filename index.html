@@ -149,7 +149,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get, set, child, getDatabase } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -165,73 +165,57 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let userId = null;
-
+        // Функция для получения параметра из URL
         function getParameterByName(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
+        const userId = getParameterByName('source'); // Получаем ID пользователя из параметров URL
 
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
+        if (userId) {
+            const userRef = ref(database, `users/${userId}`);
+            onValue(userRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    const energy = userData.energy || 0;
+                    const maxEnergy = userData.maxEnergy || 1000;
+                    const clicks = userData.clicks || 0;
 
-        function updateLocalEnergyForAllUsers() {
-            const usersRef = ref(database, 'users');
+                    document.getElementById('energy-counter').textContent = `Energy: ${energy}`;
+                    document.getElementById('counter').textContent = clicks;
 
-            onValue(usersRef, (snapshot) => {
-                snapshot.forEach(async (userSnapshot) => {
-                    const userId = userSnapshot.key;
-                    const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-                    onValue(userEnergyRef, (snapshot) => {
-                        const energy = snapshot.val();
-                        if (energy !== null) {
-                            setCookie(`energy-${userId}`, energy, 1); // сохраняем в куки на 1 день
-                        }
-                    }, (error) => {
-                        console.error('Error reading energy:', error);
-                    });
-
-                    onValue(userMaxEnergyRef, (snapshot) => {
-                        const maxEnergy = snapshot.val();
-                        if (maxEnergy !== null) {
-                            setCookie(`maxEnergy-${userId}`, maxEnergy, 1); // сохраняем в куки на 1 день
-                        }
-                    }, (error) => {
-                        console.error('Error reading maxEnergy:', error);
-                    });
-
-                    // Запуск функции восстановления энергии
+                    // Обновление состояния энергии
                     setInterval(async () => {
-                        const userEnergyRef = ref(database, `users/${userId}/energy`);
-                        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+                        const energyRef = ref(database, `users/${userId}/energy`);
+                        const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-                        try {
-                            const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                                get(userEnergyRef),
-                                get(userMaxEnergyRef)
-                            ]);
+                        const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                            get(energyRef),
+                            get(maxEnergyRef)
+                        ]);
 
-                            const energy = energySnapshot.val() || 0;
-                            const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
+                        let currentEnergy = energySnapshot.val() || 0;
+                        const maxEnergyValue = maxEnergySnapshot.val() || 1000;
 
-                           
+                        if (currentEnergy < maxEnergyValue) {
+                            currentEnergy += 1; // Восстанавливаем энергию на 1 единицу
+                            if (currentEnergy > maxEnergyValue) {
+                                currentEnergy = maxEnergyValue;
+                            }
+                            set(energyRef, currentEnergy);
+                            document.getElementById('energy-counter').textContent = `${currentEnergy}`;
+                        }
+                    }, 2000); // Восстановление энергии каждые 2 секунды
+                } else {
+                    console.error('User data not found.');
+                }
+            }, (error) => {
+                console.error('Error fetching user data:', error);
+            });
+        } else {
+            console.error('No user ID found in URL.');
+        }
+    </script>
+</body>
+</html>
