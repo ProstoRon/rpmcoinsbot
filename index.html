@@ -243,84 +243,111 @@
                 ]);
                 
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не задано
+                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
+                
+                if (energy <= 0) return;
 
-                if (energy > 0) {
-                    runTransaction(userEnergyRef, (currentEnergy) => {
-                        return (currentEnergy || 0) - 1;
-                    });
+                await runTransaction(userEnergyRef, (currentEnergy) => {
+                    return (currentEnergy || 0) - 1;
+                });
+                
+                await runTransaction(userTotalClicksRef, (currentTotalClicks) => {
+                    return (currentTotalClicks || 0) + 1;
+                });
 
-                    runTransaction(userTotalClicksRef, (currentClicks) => {
-                        return (currentClicks || 0) + 1;
-                    });
+                const clicksSnapshot = await get(userTotalClicksRef);
+                const clicks = clicksSnapshot.val() || 0;
 
-                    document.getElementById('counter').innerText = parseInt(document.getElementById('counter').innerText) + 1;
+                document.getElementById('counter').innerText = clicks;
 
-                    const floatingText = document.createElement('div');
-                    floatingText.classList.add('floating-text');
-                    floatingText.style.left = `${x - 20}px`; 
-                    floatingText.style.top = `${y - 40}px`; 
-                    floatingText.innerText = '+1';
-                    document.body.appendChild(floatingText);
+                const floatingText = document.createElement('div');
+                floatingText.className = 'floating-text';
+                floatingText.innerText = `+1`;
+                floatingText.style.left = `${x}px`;
+                floatingText.style.top = `${y}px`;
 
-                    setTimeout(() => {
-                        floatingText.remove();
-                    }, 1000);
-                }
+                document.body.appendChild(floatingText);
+
+                setTimeout(() => {
+                    floatingText.remove();
+                }, 1000);
             } catch (error) {
                 console.error('Error incrementing counter:', error);
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            userId = getCookie('userId');
-            
-            if (!userId) {
-                userId = getParameterByName('userId');
-                if (userId) {
-                    setCookie('userId', userId, 7);
-                } else {
-                    window.location.href = 'registration.html';
-                    return;
-                }
+        function getTelegramUserData() {
+            const telegramInitData = getParameterByName('telegramData');
+
+            if (telegramInitData) {
+                const parsedData = JSON.parse(decodeURIComponent(telegramInitData));
+                return {
+                    id: parsedData.id,
+                    username: parsedData.username,
+                    avatar: parsedData.photo_url
+                };
+            }
+            return null;
+        }
+
+        function showUserInfo(userData) {
+            const userInfoContainer = document.getElementById('user-info');
+            const avatarElement = document.createElement('img');
+            avatarElement.src = userData.avatar;
+            avatarElement.classList.add('rounded-image');
+
+            const usernameElement = document.createElement('span');
+            usernameElement.textContent = `@${userData.username}`;
+
+            userInfoContainer.appendChild(avatarElement);
+            userInfoContainer.appendChild(usernameElement);
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const telegramData = getTelegramUserData();
+            const savedUserId = getCookie('userId');
+
+            if (telegramData) {
+                userId = telegramData.id;
+                showUserInfo(telegramData);
+                setCookie('userId', userId, 7);
+            } else if (savedUserId) {
+                userId = savedUserId;
+            } else {
+                redirectToRegistration();
+                return;
             }
 
             const userRef = ref(database, `users/${userId}`);
-            
-            get(userRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    updateLocalEnergy();
-                } else {
-                    window.location.href = 'registration.html';
-                }
-            });
+            const userSnapshot = await get(userRef);
 
-            const button = document.getElementById('button');
-
-            button.addEventListener('mousedown', (event) => {
-                incrementCounter(event.clientX, event.clientY);
-            });
-
-            button.addEventListener('touchstart', (event) => {
-                event.preventDefault();
-                Array.from(event.changedTouches).forEach(touch => {
-                    incrementCounter(touch.clientX, touch.clientY);
+            if (!userSnapshot.exists()) {
+                await set(userRef, {
+                    energy: 100,
+                    maxEnergy: 1000,
+                    totalClicks: 0
                 });
+            }
+
+            updateLocalEnergy();
+
+            document.getElementById("button").addEventListener("click", function(event) {
+                const x = event.clientX;
+                const y = event.clientY;
+                incrementCounter(x, y);
             });
 
-            // Перезагрузка энергии каждую секунду
-            setInterval(() => {
-                const energy = parseInt(getCookie('energy') || '0');
-                const maxEnergy = parseInt(getCookie('maxEnergy') || '1000');
-
-                if (energy < maxEnergy) {
-                    runTransaction(ref(database, `users/${userId}/energy`), (currentEnergy) => {
-                        return Math.min((currentEnergy || 0) + 1, maxEnergy);
-                    });
+            // Обработка событий для нескольких касаний
+            document.getElementById("button").addEventListener("touchstart", function(event) {
+                event.preventDefault(); // Предотвращаем запуск действия по умолчанию
+                for (let i = 0; i < event.touches.length; i++) {
+                    const touch = event.touches[i];
+                    const x = touch.clientX;
+                    const y = touch.clientY;
+                    incrementCounter(x, y);
                 }
-            }, 2000);
+            });
         });
-
     </script>
 </body>
 </html>
