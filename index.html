@@ -4,119 +4,118 @@
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-/* Стили для мобильных устройств (по умолчанию) */
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background: linear-gradient(
-        45deg,
-        #000 0%,          /* Чёрный цвет для краёв */
-        #000 20%,         /* Более широкий чёрный участок */
-        #a41a7e 20%,      /* Плавный переход в более светлый фиолетовый */
-        #a41a7e 40%,      /* Середина с более светлым фиолетовым */
-        #910179 40%,      /* Основной фиолетовый цвет */
-        #910179 60%,      /* Основной фиолетовый цвет */
-        #a41a7e 60%,      /* Плавный переход в более светлый фиолетовый */
-        #a41a7e 80%,      /* Более светлый фиолетовый в конце */
-        #000 80%,         /* Чёрный цвет для краёв */
-        #000 100%         /* Чёрный цвет для краёв */
-    );
-    background-size: cover;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-    position: center;
-    backdrop-filter: blur(30px); /* Размытие фона */
-    color: #fff; /* Цвет текста для контраста */
-}
+        /* Стили для мобильных устройств (по умолчанию) */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(
+                45deg,
+                #000 0%,          /* Чёрный цвет для краёв */
+                #000 20%,         /* Более широкий чёрный участок */
+                #a41a7e 20%,      /* Плавный переход в более светлый фиолетовый */
+                #a41a7e 40%,      /* Середина с более светлым фиолетовым */
+                #910179 40%,      /* Основной фиолетовый цвет */
+                #910179 60%,      /* Основной фиолетовый цвет */
+                #a41a7e 60%,      /* Плавный переход в более светлый фиолетовый */
+                #a41a7e 80%,      /* Более светлый фиолетовый в конце */
+                #000 80%,         /* Чёрный цвет для краёв */
+                #000 100%         /* Чёрный цвет для краёв */
+            );
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: center;
+            backdrop-filter: blur(30px); /* Размытие фона */
+            color: #fff; /* Цвет текста для контраста */
+        }
 
-.container {
-    display: block;
-    text-align: center;
-    position: relative;
-}
+        .container {
+            display: block;
+            text-align: center;
+            position: relative;
+        }
 
-.button {
-    width: 320px; 
-    height: 320px; 
-    background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-    background-size: cover; 
-    background-position: center; 
-    border: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    margin-bottom: 20px;
-    transition: transform 0.1s ease, box-shadow 0.1s ease; 
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-    position: relative;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-}
+        .button {
+            width: 320px; 
+            height: 320px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
 
-.button:active {
-    transform: scale(0.9); 
-}
+        .button:active {
+            transform: scale(0.9); 
+        }
 
-.counter, .energy-counter {
-    font-size: 36px; 
-    color: #333;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-}
+        .counter, .energy-counter {
+            font-size: 36px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        }
 
-.floating-text {
-    position: absolute;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 28px;
-    font-weight: bold;
-    animation: floatUp 1s ease forwards;
-    pointer-events: none;
-    -webkit-tap-highlight-color: transparent;
-    transition: background-color 0.3s ease, color 0.3s ease; 
-}
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 28px;
+            font-weight: bold;
+            animation: floatUp 1s ease forwards;
+            pointer-events: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease; 
+        }
 
-@keyframes floatUp {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-100px);
-    }
-}
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
 
-.user-info {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    font-size: 18px;
-    color: #333;
-}
+        .user-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #333;
+        }
 
-.rounded-image {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    object-fit: cover;
-}
+        .rounded-image {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            object-fit: cover;
+        }
 
-/* Скрыть элементы на больших экранах (ПК) */
-@media only screen and (min-width: 769px) {
-    .container, .user-info, .button, .counter, .energy-counter {
-        display: none;
-    }
-}
-
+        /* Скрыть элементы на больших экранах (ПК) */
+        @media only screen and (min-width: 769px) {
+            .container, .user-info, .button, .counter, .energy-counter {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -225,93 +224,40 @@ body {
                     return currentEnergy;
                 });
 
-                await runTransaction(userTotalClicksRef, (currentValue) => {
-                    return (currentValue || 0) + 1;
+                await runTransaction(userTotalClicksRef, (currentClicks) => {
+                    return (currentClicks || 0) + 1;
                 });
 
-                const updatedEnergy = (await get(userEnergyRef)).val();
-                const updatedCount = (await get(userTotalClicksRef)).val();
-                
-                document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                document.getElementById('energy-counter').innerText = updatedEnergy !== null ? `Energy: ${updatedEnergy}` : `Energy: 0`;
-
-                showFloatingText(event);
-
+                updateLocalEnergy();
             } catch (error) {
                 console.error('Error incrementing counter:', error);
             }
         }
 
-        function showFloatingText(event) {
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.innerText = `+1`;
-
-            const buttonRect = document.getElementById('button').getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
-
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-
-            event.target.appendChild(floatingText);
-
-            floatingText.addEventListener('animationend', () => {
-                floatingText.remove();
-            });
-        }
-
-        function displayUserData() {
-            userId = getParameterByName('source');
+        window.onload = function() {
+            userId = getParameterByName('userId');
             if (userId) {
-                const userRef = ref(database, `users/${userId}`);
-                onValue(userRef, (snapshot) => {
-                    const userData = snapshot.val();
-                    if (userData) {
-                        document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
-                        updateLocalEnergy();
-                    } else {
-                        document.getElementById('user-info').innerText = 'User not found';
-                    }
-                }, (error) => {
-                    console.error('Error reading user data:', error);
-                });
-            }
-        }
-
-        displayUserData();
-
-        setInterval(async () => {
-            if (!userId) return;
-
-            try {
-                const userEnergyRef = ref(database, `users/${userId}/energy`);
-                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                    get(userEnergyRef),
-                    get(userMaxEnergyRef)
-                ]);
-
-                const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000;
-
-                if (energy < maxEnergy) {
-                    await runTransaction(userEnergyRef, (currentEnergy) => {
-                        if ((currentEnergy || 0) < maxEnergy) {
-                            return Math.min((currentEnergy || 0) + 1, maxEnergy);
-                        }
-                        return currentEnergy;
-                    });
-                }
-
+                setCookie('userId', userId, 1);
                 updateLocalEnergy();
-            } catch (error) {
-                console.error('Error updating energy:', error);
-            }
-        }, 2000); // обновление каждые 2 секунды
 
-        document.getElementById('button').addEventListener('click', incrementCounter);
+                document.getElementById('button').addEventListener('click', incrementCounter);
+
+                const counterElement = document.getElementById('counter');
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+                onValue(userTotalClicksRef, (snapshot) => {
+                    const totalClicks = snapshot.val() || 0;
+                    counterElement.innerText = totalClicks;
+                }, (error) => {
+                    console.error('Error reading totalClicks:', error);
+                });
+            } else {
+                userId = getCookie('userId');
+                if (userId) {
+                    updateLocalEnergy();
+                }
+            }
+        };
     </script>
 </body>
 </html>
