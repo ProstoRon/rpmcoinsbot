@@ -229,6 +229,19 @@
             });
         }
 
+        async function updateClickCounter() {
+            if (!userId) return;
+
+            try {
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                const totalClicksSnapshot = await get(userTotalClicksRef);
+                const totalClicks = totalClicksSnapshot.val() || 0;
+                document.getElementById('counter').innerText = totalClicks;
+            } catch (error) {
+                console.error('Error fetching total clicks:', error);
+            }
+        }
+
         async function incrementCounter(event) {
             if (!userId) return;
 
@@ -258,8 +271,7 @@
                     return (currentClicks || 0) + 1;
                 });
 
-                const counter = document.getElementById('counter');
-                counter.innerText = parseInt(counter.innerText) + 1;
+                await updateClickCounter(); // Обновляем счётчик кликов
 
                 const button = document.getElementById('button');
                 const rect = button.getBoundingClientRect();
@@ -297,6 +309,7 @@
                 userInfo.innerText = `User ID: ${userId}`;
 
                 updateLocalEnergy();
+                updateClickCounter(); // Обновляем счётчик кликов при загрузке страницы
 
                 const button = document.getElementById('button');
                 button.addEventListener('click', incrementCounter);
