@@ -230,20 +230,16 @@
                 if (energy <= 0) return;
 
                 // Локально обновляем счётчик кликов и энергию
-                await runTransaction(userEnergyRef, (currentEnergy) => {
-                    if ((currentEnergy || 0) > 0) {
-                        return (currentEnergy || 0) - 1; 
-                    }
-                    return currentEnergy;
-                });
+                document.getElementById('counter').innerText = (parseInt(document.getElementById('counter').innerText) + 1).toString();
+                document.getElementById('energy-counter').innerText = `Energy: ${energy - 1}`;
 
-                const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
-                await runTransaction(userTotalClicksRef, () => {
-                    return newTotalClicks + 1;
-                });
+                // Обновление данных в Firebase
+                await Promise.all([
+                    runTransaction(userEnergyRef, currentEnergy => Math.max((currentEnergy || 0) - 1, 0)),
+                    runTransaction(userTotalClicksRef, currentClicks => (currentClicks || 0) + 1)
+                ]);
 
-                updateClickCounter(newTotalClicks + 1); // Обновляем счётчик кликов
-
+                // Отображение эффекта клика
                 const button = document.getElementById('button');
                 const rect = button.getBoundingClientRect();
 
@@ -280,7 +276,6 @@
                 userInfo.innerText = `User ID: ${userId}`;
 
                 updateLocalEnergy();
-                updateClickCounter((document.getElementById('counter').innerText || 0));
 
                 const button = document.getElementById('button');
                 button.addEventListener('click', incrementCounter);
