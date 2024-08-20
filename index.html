@@ -231,19 +231,20 @@ async function incrementCounter(x, y) {
 
         if (energy > 0) {
             const newEnergy = energy - 1;
-            const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
             const currentClicks = (await get(userClicksRef)).val() || 0;
+            const totalClicksSnapshot = await get(userTotalClicksRef);
+            const currentTotalClicks = totalClicksSnapshot.val() || 0;
 
             await Promise.all([
                 set(userEnergyRef, newEnergy),
-                set(userTotalClicksRef, newTotalClicks + 1)
+                set(userTotalClicksRef, currentTotalClicks + currentClicks)
             ]);
 
             updateLocalEnergy();
 
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+${currentClicks}`;
+            floatingText.innerText = `Clicks: ${currentClicks}`;
             floatingText.style.position = 'absolute';
 
             // Учет скролла страницы и родительских элементов
