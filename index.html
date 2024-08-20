@@ -121,7 +121,7 @@
             .counter, .energy-counter {
                 font-size: 36px; 
                 position: absolute;
-                bottom: 300px;
+                bottom: 150px; /* Переместили счётчик кликов ниже */
             }
             .button:active {
                 transform: scale(0.9); 
@@ -189,7 +189,7 @@
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            
+
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
                 if (energy !== null) {
@@ -208,24 +208,47 @@
             }, (error) => {
                 console.error('Error reading maxEnergy:', error);
             });
+
+            // Запуск функции восстановления энергии
+            setInterval(async () => {
+                if (!userId) return;
+
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+                try {
+                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                        get(userEnergyRef),
+                        get(userMaxEnergyRef)
+                    ]);
+
+                    const energy = energySnapshot.val() || 0;
+                    const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
+
+                    if (energy < maxEnergy) {
+                        await runTransaction(userEnergyRef, (currentEnergy) => {
+                            if ((currentEnergy || 0) < maxEnergy) {
+                                return (currentEnergy || 0) + 1; 
+                            }
+                            return currentEnergy;
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error updating energy:', error);
+                }
+            }, 2000); // 2 секунды для восстановления энергии
         }
 
-        async function incrementCounter(event) {
+        async function incrementCounter() {
             if (!userId) return;
 
             try {
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                
-                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                    get(userEnergyRef),
-                    get(userMaxEnergyRef)
-                ]);
-                
+
+                const energySnapshot = await get(userEnergyRef);
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
-                
+
                 if (energy <= 0) return;
 
                 await runTransaction(userEnergyRef, (currentEnergy) => {
