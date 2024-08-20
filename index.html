@@ -243,7 +243,7 @@ async function incrementCounter(x, y) {
 
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+${currentClicks}`;
+            floatingText.innerText = `Clicks: ${currentClicks}`;
             floatingText.style.position = 'absolute';
             floatingText.style.left = `${x}px`;
             floatingText.style.top = `${y}px`;
@@ -295,8 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('button').addEventListener('click', (event) => {
         const rect = event.target.getBoundingClientRect();
-        const x = event.clientX - rect.left + window.scrollX;
-        const y = event.clientY - rect.top + window.scrollY;
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
         incrementCounter(x, y);
     });
 });
