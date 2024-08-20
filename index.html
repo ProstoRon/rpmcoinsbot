@@ -182,11 +182,11 @@
             return urlParams.get(name);
         }
 
-        function updateLocalEnergy() {
+        function updateLocalValues() {
             if (!userId) return;
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
             
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
@@ -197,18 +197,14 @@
                 console.error('Error reading energy:', error);
             });
 
-            onValue(userMaxEnergyRef, (snapshot) => {
-                const maxEnergy = snapshot.val();
-                if (maxEnergy !== null) {
-                    // Можно добавить логику для обработки maxEnergy, если нужно
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                if (totalClicks !== null) {
+                    document.getElementById('counter').innerText = totalClicks;
                 }
             }, (error) => {
-                console.error('Error reading maxEnergy:', error);
+                console.error('Error reading totalClicks:', error);
             });
-        }
-
-        function updateClickCounter(totalClicks) {
-            document.getElementById('counter').innerText = totalClicks;
         }
 
         async function incrementCounter(event) {
@@ -218,28 +214,25 @@
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
                 const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                
+
                 const [energySnapshot, maxEnergySnapshot] = await Promise.all([
                     get(userEnergyRef),
                     get(userMaxEnergyRef)
                 ]);
-                
+
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
-                
+                const maxEnergy = maxEnergySnapshot.val() || 1000;
+
                 if (energy <= 0) return;
 
-                // Локально обновляем счётчик кликов и энергию
                 document.getElementById('counter').innerText = (parseInt(document.getElementById('counter').innerText) + 1).toString();
                 document.getElementById('energy-counter').innerText = `Energy: ${energy - 1}`;
 
-                // Обновление данных в Firebase
                 await Promise.all([
                     runTransaction(userEnergyRef, currentEnergy => Math.max((currentEnergy || 0) - 1, 0)),
                     runTransaction(userTotalClicksRef, currentClicks => (currentClicks || 0) + 1)
                 ]);
 
-                // Отображение эффекта клика
                 const button = document.getElementById('button');
                 const rect = button.getBoundingClientRect();
 
@@ -275,7 +268,7 @@
                 const userInfo = document.getElementById('user-info');
                 userInfo.innerText = `User ID: ${userId}`;
 
-                updateLocalEnergy();
+                updateLocalValues();
 
                 const button = document.getElementById('button');
                 button.addEventListener('click', incrementCounter);
@@ -284,7 +277,6 @@
                 console.log('User ID is missing.');
             }
         });
-
     </script>
 </body>
 </html>
