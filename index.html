@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>RPMcoinbot</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RPMcoinbot</title>
     <style>
         body {
             display: flex;
@@ -10,10 +11,9 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to right, #00c6ff, #0072ff); /* Измененный градиент */
+            background: linear-gradient(to right, #00c6ff, #0072ff);
             font-family: Arial, sans-serif;
             overflow: hidden;
-            position: center;
         }
 
         .container {
@@ -23,18 +23,18 @@
         }
 
         .button {
-            width: 500px; 
-            height: 500px; 
-            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-            background-size: cover; 
-            background-position: center; 
+            width: 500px;
+            height: 500px;
+            background-image: url('https://i.imgur.com/5Yn6qnN.png');
+            background-size: cover;
+            background-position: center;
             border: none;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease; 
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
             -webkit-tap-highlight-color: transparent;
             outline: none;
             position: relative;
@@ -43,14 +43,14 @@
         }
 
         .button:active {
-            transform: scale(0.9); 
+            transform: scale(0.9);
         }
 
         .counter {
-            font-size: 48px; 
+            font-size: 48px;
             color: #333;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .floating-text {
@@ -61,7 +61,7 @@
             animation: floatUp 1s ease forwards;
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; 
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         @keyframes floatUp {
@@ -96,169 +96,186 @@
 
         @media only screen and (max-width: 768px) {
             .button {
-                width: 320px; 
-                height: 320px; 
+                width: 320px;
+                height: 320px;
                 top: 100px;
                 position: relative;
             }
-            
+
             .counter {
-                font-size: 36px; 
+                font-size: 36px;
                 position: absolute;
                 bottom: 300px;
             }
+
             .button:active {
-                transform: scale(0.9); 
+                transform: scale(0.9);
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="button" id="button" onclick="incrementCounter(event)"></div>
-        <div class="counter" id="counter">0</div>
-    </div>
-    <div class="user-info" id="user-info"></div>
-    <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
-    <!-- Подключаем Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+<div class="container">
+    <div class="button" id="button" onclick="incrementCounter(event)"></div>
+    <div class="counter" id="counter">0</div>
+</div>
+<div class="user-info" id="user-info"></div>
+<img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+        authDomain: "rpmcoins-48e4f.firebaseapp.com",
+        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+        projectId: "rpmcoins-48e4f",
+        storageBucket: "rpmcoins-48e4f.appspot.com",
+        messagingSenderId: "764805793058",
+        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+        measurementId: "G-S2PRPR80F5"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-        let userId = null;
+    let userId = null;
 
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
 
-        function updateLocalCounter() {
-            if (!userId) return;
+    async function updateLocalCounter() {
+        if (!userId) return;
 
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
-            }, (error) => {
-                console.error('Error reading counter:', error);
-            });
-        }
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        onValue(userTotalClicksRef, (snapshot) => {
+            const totalClicks = snapshot.val();
+            document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+        }, (error) => {
+            console.error('Error reading counter:', error);
+        });
+    }
 
-        window.incrementCounter = async function(event) {
-            if (!userId) return;
+    window.incrementCounter = async function(event) {
+        if (!userId) return;
 
-            try {
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userEnergyRef = ref(database, `users/${userId}/Energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/MaxEnergy`);
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
+        try {
+            const energySnapshot = await get(userEnergyRef);
+            const energy = energySnapshot.val();
+
+            if (energy > 0) {
+                // Уменьшаем энергию на 1
+                await runTransaction(userEnergyRef, (currentValue) => {
+                    return (currentValue || 0) - 1;
+                });
+
+                // Увеличиваем счетчик кликов на 1
                 await runTransaction(userTotalClicksRef, (currentValue) => {
                     return (currentValue || 0) + 1;
                 });
 
                 const updatedCount = (await get(userTotalClicksRef)).val();
                 document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+
                 showFloatingText(event, 1);
-            } catch (error) {
-                console.error('Error updating counter:', error);
-            }
-        };
-
-        function showFloatingText(event, clicks) {
-            if (!userId) return;
-
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.innerText = `+${clicks}`;
-
-            const buttonRect = event.target.getBoundingClientRect();
-            const x = event.clientX - buttonRect.left;
-            const y = event.clientY - buttonRect.top;
-
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-
-            event.target.appendChild(floatingText);
-
-            // Удаление элемента после завершения анимации
-            floatingText.addEventListener('animationend', () => {
-                floatingText.remove();
-            });
-        }
-
-        function displayUserData() {
-            userId = getParameterByName('source');
-            if (userId) {
-                const userRef = ref(database, `users/${userId}`);
-                onValue(userRef, (snapshot) => {
-                    const userData = snapshot.val();
-                    if (userData) {
-                        document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
-                        updateLocalCounter();
-                    } else {
-                        document.getElementById('user-info').innerText = 'User not found.';
-                    }
-                });
             } else {
-                document.getElementById('user-info').innerText = 'No user ID provided.';
+                console.log('Недостаточно энергии.');
             }
+        } catch (error) {
+            console.error('Error updating counter:', error);
         }
+    };
 
-        function applyButtonTilt(event) {
-            const button = document.getElementById('button');
-            const buttonRect = button.getBoundingClientRect();
-            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+    function showFloatingText(event, clicks) {
+        const floatingText = document.createElement('div');
+        floatingText.className = 'floating-text';
+        floatingText.innerText = `+${clicks}`;
 
-            const mouseX = event.clientX;
-            const mouseY = event.clientY;
+        const buttonRect = event.target.getBoundingClientRect();
+        const x = event.clientX - buttonRect.left;
+        const y = event.clientY - buttonRect.top;
 
-            const deltaX = mouseX - buttonCenterX;
-            const deltaY = mouseY - buttonCenterY;
+        floatingText.style.left = `${x}px`;
+        floatingText.style.top = `${y}px`;
 
-            const maxTilt = 30;
+        event.target.appendChild(floatingText);
 
-            const tiltX = (deltaY / buttonRect.height) * maxTilt;
-            const tiltY = (deltaX / buttonRect.width) * maxTilt;
+        floatingText.addEventListener('animationend', () => {
+            floatingText.remove();
+        });
+    }
 
-            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    async function regenerateEnergy() {
+        if (!userId) return;
+
+        const userEnergyRef = ref(database, `users/${userId}/Energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/MaxEnergy`);
+        const lastActiveRef = ref(database, `users/${userId}/lastActive`);
+
+        onValue(userMaxEnergyRef, async (snapshot) => {
+            const maxEnergy = snapshot.val();
+            const currentTime = Date.now();
+            const lastActiveSnapshot = await get(lastActiveRef);
+            const lastActiveTime = lastActiveSnapshot.val() || currentTime;
+
+            // Вычисляем количество времени, прошедшего с последнего посещения
+            const timeElapsed = Math.floor((currentTime - lastActiveTime) / 2000);
+            const energyToRegenerate = Math.min(maxEnergy, timeElapsed);
+
+            await runTransaction(userEnergyRef, (currentValue) => {
+                return Math.min(maxEnergy, (currentValue || 0) + energyToRegenerate);
+            });
+
+            // Обновляем время последнего посещения
+            await set(lastActiveRef, currentTime);
+        });
+    }
+
+    function displayUserData() {
+        userId = getParameterByName('source');
+        if (userId) {
+            const userRef = ref(database, `users/${userId}`);
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
+                    regenerateEnergy();
+                    updateLocalCounter();
+                } else {
+                    document.getElementById('user-info').innerText = 'User not found.';
+                }
+            });
+        } else {
+            document.getElementById('user-info').innerText = 'No user ID provided.';
         }
+    }
 
-        function resetButtonTilt() {
-            const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        }
+    function applyButtonTilt(event) {
+        const button = document.getElementById('button');
+        const buttonRect = button.getBoundingClientRect();
+        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+        const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+        const tiltX = (event.clientX - buttonCenterX) / 10;
+        const tiltY = (event.clientY - buttonCenterY) / 10;
 
-        function handleMouseDown(event) {
-            applyButtonTilt(event);
-            document.addEventListener('mousemove', applyButtonTilt);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
+        button.style.transform = `rotateX(${-tiltY}deg) rotateY(${tiltX}deg)`;
+    }
 
-        function handleMouseUp() {
-            resetButtonTilt();
-            document.removeEventListener('mousemove', applyButtonTilt);
-            document.removeEventListener('mouseup', handleMouseUp);
-        }
+    function resetButtonTilt() {
+        const button = document.getElementById('button');
+        button.style.transform = 'rotateX(0) rotateY(0)';
+    }
 
-        function init() {
-            document.getElementById('button').addEventListener('mousedown', handleMouseDown);
-            displayUserData();
-        }
+    document.addEventListener('mousemove', applyButtonTilt);
+    document.addEventListener('mouseleave', resetButtonTilt);
 
-        init();
-    </script>
+    displayUserData();
+</script>
 </body>
 </html>
