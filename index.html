@@ -3,6 +3,7 @@
 <head>
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
          body {
             display: flex;
@@ -213,6 +214,8 @@
                             await set(userRef, { ...data, energy });
                             document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
                         }
+                    } else {
+                        console.log('User data not found');
                     }
                 } catch (error) {
                     console.error('Error updating energy:', error);
@@ -237,13 +240,12 @@
                         await runTransaction(userEnergyRef, (currentEnergy) => {
                             return Math.max((currentEnergy || 0) - 1, 0);
                         });
-
                         await runTransaction(userTotalClicksRef, (currentClicks) => {
                             return (currentClicks || 0) + 1;
                         });
-
-                        updateEnergy(); // Обновляем значение энергии в интерфейсе
                     }
+                } else {
+                    console.log('User data not found');
                 }
             } catch (error) {
                 console.error('Error incrementing counter:', error);
@@ -271,6 +273,8 @@
                 userId = getCookie('userId');
                 if (userId) {
                     updateEnergy();
+                } else {
+                    console.log('No userId found in URL or cookies');
                 }
             }
         };
