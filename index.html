@@ -158,43 +158,27 @@
             });
         }
 
-        async function updateEnergy() {
-            if (!userId) return;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-            const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                get(userEnergyRef),
-                get(userMaxEnergyRef)
-            ]);
-
-            let energy = energySnapshot.val() || 0;
-            const maxEnergy = maxEnergySnapshot.val() || 100;
-
-            return { energy, maxEnergy };
-        }
-
         async function incrementCounter(event) {
             if (!userId) return;
 
-            const { energy, maxEnergy } = await updateEnergy();
-
-            if (energy <= 0) {
-                console.log('Not enough energy');
-                return;
-            }
-
             try {
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+                const energySnapshot = await get(userEnergyRef);
+                const currentEnergy = energySnapshot.val() || 0;
+
+                if (currentEnergy <= 0) {
+                    alert('No energy left!');
+                    return;
+                }
+
+                await runTransaction(userEnergyRef, (currentValue) => {
+                    return (currentValue || 0) - 1;
+                });
 
                 await runTransaction(userTotalClicksRef, (currentValue) => {
                     return (currentValue || 0) + 1;
-                });
-
-                await runTransaction(userEnergyRef, (currentValue) => {
-                    return Math.max((currentValue || 0) - 1, 0);
                 });
 
                 const updatedCount = (await get(userTotalClicksRef)).val();
@@ -266,28 +250,13 @@
         }
 
         function resetButtonTilt() {
-            const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            document.getElementById('button').style.transform = 'rotateX(0deg) rotateY(0deg)';
         }
 
-        function handleMouseDown(event) {
-            applyButtonTilt(event);
-            document.addEventListener('mousemove', applyButtonTilt);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
+        document.getElementById('button').addEventListener('mousemove', applyButtonTilt);
+        document.getElementById('button').addEventListener('mouseleave', resetButtonTilt);
 
-        function handleMouseUp() {
-            resetButtonTilt();
-            document.removeEventListener('mousemove', applyButtonTilt);
-            document.removeEventListener('mouseup', handleMouseUp);
-        }
-
-        function init() {
-            document.getElementById('button').addEventListener('mousedown', handleMouseDown);
-            displayUserData();
-        }
-
-        init();
+        displayUserData();
     </script>
 </body>
 </html>
