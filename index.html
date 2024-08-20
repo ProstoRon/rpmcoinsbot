@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
-        /* Стили для мобильных устройств */
-        body {
+         body {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -138,6 +137,7 @@
                 transform: scale(0.9); 
             }
         }
+
     </style>
 </head>
 <body>
@@ -151,7 +151,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -177,6 +177,11 @@
 
         if (userId) {
             const userRef = ref(database, `users/${userId}`);
+            const energyRef = ref(database, `users/${userId}/energy`);
+            const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            const clicksRef = ref(database, `users/${userId}/clicks`);
+
+            // Отображение информации о пользователе
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
@@ -187,11 +192,8 @@
                     document.getElementById('energy-counter').textContent = `Energy: ${energy}`;
                     document.getElementById('counter').textContent = clicks;
 
-                    // Обновление состояния энергии
+                    // Восстановление энергии
                     setInterval(async () => {
-                        const energyRef = ref(database, `users/${userId}/energy`);
-                        const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
                         const [energySnapshot, maxEnergySnapshot] = await Promise.all([
                             get(energyRef),
                             get(maxEnergyRef)
@@ -205,10 +207,40 @@
                             if (currentEnergy > maxEnergyValue) {
                                 currentEnergy = maxEnergyValue;
                             }
-                            set(energyRef, currentEnergy);
-                            document.getElementById('energy-counter').textContent = `${currentEnergy}`;
+                            await set(energyRef, currentEnergy);
+                            document.getElementById('energy-counter').textContent = `Energy: ${currentEnergy}`;
                         }
                     }, 2000); // Восстановление энергии каждые 2 секунды
+
+                    // Обработчик кликов
+                    document.getElementById('button').addEventListener('click', async () => {
+                        try {
+                            // Проверяем, есть ли достаточно энергии
+                            const energySnapshot = await get(energyRef);
+                            const currentEnergy = energySnapshot.val() || 0;
+
+                            if (currentEnergy > 0) {
+                                // Уменьшаем энергию на 1
+                                await runTransaction(energyRef, (current) => {
+                                    return (current || 0) - 1;
+                                });
+
+                                // Увеличиваем количество кликов
+                                await runTransaction(clicksRef, (current) => {
+                                    return (current || 0) + 1;
+                                });
+
+                                // Обновляем счётчик кликов
+                                const clicksSnapshot = await get(clicksRef);
+                                const clicks = clicksSnapshot.val() || 0;
+                                document.getElementById('counter').textContent = clicks;
+                            } else {
+                                console.log('Not enough energy');
+                            }
+                        } catch (error) {
+                            console.error('Error updating clicks or energy:', error);
+                        }
+                    });
                 } else {
                     console.error('User data not found.');
                 }
