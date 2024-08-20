@@ -99,7 +99,7 @@
             }
             100% {
                 opacity: 0;
-                transform: translateY(-100px);
+                transform: translateY(-20px);
             }
         }
 
@@ -237,18 +237,21 @@ async function incrementCounter(x, y) {
             const totalClicksSnapshot = await get(userTotalClicksRef);
             const currentTotalClicks = totalClicksSnapshot.val() || 0;
 
+            // Обновляем значения в базе данных
             await set(userEnergyRef, Math.max(newEnergy, 0));
             await set(userClicksRef, currentClicks + 1);
             await set(userTotalClicksRef, currentTotalClicks + 1);
 
+            // Обновляем счетчики на странице
             document.getElementById('counter').innerText = currentTotalClicks + 1;
+            document.getElementById('energy-counter').innerText = `Energy: ${Math.max(newEnergy, 0)}`;
 
             // Генерация всплывающего текста
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
             floatingText.innerText = '+1';
             floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
+            floatingText.style.top = `${y + 20}px`; // Опускаем на 20px ниже клика
             document.body.appendChild(floatingText);
 
             setTimeout(() => {
