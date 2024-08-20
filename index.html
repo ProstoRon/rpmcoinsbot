@@ -137,143 +137,168 @@
 
     <!-- Подключаем Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+    authDomain: "rpmcoins-48e4f.firebaseapp.com",
+    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+    projectId: "rpmcoins-48e4f",
+    storageBucket: "rpmcoins-48e4f.appspot.com",
+    messagingSenderId: "764805793058",
+    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+    measurementId: "G-S2PRPR80F5"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-        let userId = null;
+let userId = null;
 
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+function getParameterByName(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function updateLocalEnergy() {
+    if (!userId) return;
+
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+    onValue(userEnergyRef, (snapshot) => {
+        const energy = snapshot.val();
+        if (energy !== null) {
+            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+            setCookie('energy', energy, 1); // сохраняем в куки на 1 день
         }
+    }, (error) => {
+        console.error('Error reading energy:', error);
+    });
 
-        function updateLocalEnergy() {
-            if (!userId) return;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                if (energy !== null) {
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                }
-            }, (error) => {
-                console.error('Error reading energy:', error);
-            });
-
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                if (totalClicks !== null) {
-                    document.getElementById('counter').innerText = totalClicks;
-                }
-            }, (error) => {
-                console.error('Error reading total clicks:', error);
-            });
+    onValue(userMaxEnergyRef, (snapshot) => {
+        const maxEnergy = snapshot.val();
+        if (maxEnergy !== null) {
+            setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
         }
+    }, (error) => {
+        console.error('Error reading max energy:', error);
+    });
 
-        async function incrementCounter(x, y) {
-            if (!userId) return;
-
-            try {
-                const userEnergyRef = ref(database, `users/${userId}/energy`);
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const userClicksRef = ref(database, `users/${userId}/clicks`);
-
-                const [energySnapshot, clicksSnapshot, totalClicksSnapshot] = await Promise.all([
-                    get(userEnergyRef),
-                    get(userClicksRef),
-                    get(userTotalClicksRef)
-                ]);
-
-                const energy = energySnapshot.val() || 0;
-                const clicks = clicksSnapshot.val() || 0;
-                const totalClicks = totalClicksSnapshot.val() || 0;
-
-                if (energy > 0) {
-                    const newEnergy = energy - 1;
-                    const newClicks = clicks + 1;
-                    const newTotalClicks = totalClicks + 1;
-
-                    await Promise.all([
-                        set(userEnergyRef, newEnergy),
-                        set(userClicksRef, newClicks),
-                        set(userTotalClicksRef, newTotalClicks)
-                    ]);
-
-                    updateLocalEnergy();
-
-                    const floatingText = document.createElement('div');
-                    floatingText.className = 'floating-text';
-                    floatingText.innerText = `users/${userId}/clicks`; // Отображает количество кликов в текущем взаимодействии
-                    floatingText.style.left = `${x}px`;
-                    floatingText.style.top = `${y}px`;
-                    document.querySelector('.container').appendChild(floatingText);
-                    setTimeout(() => floatingText.remove(), 1000);
-                }
-            } catch (error) {
-                console.error('Error handling click:', error);
-            }
+    onValue(userTotalClicksRef, (snapshot) => {
+        const totalClicks = snapshot.val();
+        if (totalClicks !== null) {
+            document.getElementById('counter').innerText = totalClicks;
         }
+    }, (error) => {
+        console.error('Error reading total clicks:', error);
+    });
+}
 
-        function startEnergyRegeneration() {
-            setInterval(async () => {
-                if (!userId) return;
+async function incrementCounter(x, y) {
+    if (!userId) return;
 
-                try {
-                    const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                    
-                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                        get(userEnergyRef),
-                        get(userMaxEnergyRef)
-                    ]);
+    try {
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userClicksRef = ref(database, `users/${userId}/clicks`);
 
-                    const energy = energySnapshot.val() || 0;
-                    const maxEnergy = maxEnergySnapshot.val() || 0;
+        const energySnapshot = await get(userEnergyRef);
+        const energy = energySnapshot.val() || 0;
 
-                    if (energy < maxEnergy) {
-                        await set(userEnergyRef, Math.min(energy + 1, maxEnergy));
-                        updateLocalEnergy();
-                    }
-                } catch (error) {
-                    console.error('Error regenerating energy:', error);
-                }
-            }, 2000); // Обновление энергии каждые 2 секунды
-        }
+        if (energy > 0) {
+            const newEnergy = energy - 1;
+            const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
+            const currentClicks = (await get(userClicksRef)).val() || 0;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            userId = getParameterByName('source') || getCookie('userId');
-            if (!userId) {
-                alert('User ID not found.');
-                return;
-            }
+            await Promise.all([
+                set(userEnergyRef, newEnergy),
+                set(userTotalClicksRef, newTotalClicks + 1)
+            ]);
 
             updateLocalEnergy();
-            startEnergyRegeneration();
 
-            document.getElementById('button').addEventListener('click', (event) => {
-                const rect = event.target.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                incrementCounter(x, y);
-            });
-        });
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.innerText = `Clicks: ${currentClicks}`;
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+            document.body.appendChild(floatingText);
+            setTimeout(() => floatingText.remove(), 1000);
+        }
+    } catch (error) {
+        console.error('Error handling click:', error);
+    }
+}
+
+function startEnergyRegeneration() {
+    setInterval(async () => {
+        if (!userId) return;
+
+        try {
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            
+            const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                get(userEnergyRef),
+                get(userMaxEnergyRef)
+            ]);
+
+            const energy = energySnapshot.val() || 0;
+            const maxEnergy = maxEnergySnapshot.val() || 0;
+
+            if (energy < maxEnergy) {
+                await set(userEnergyRef, energy + 1);
+                updateLocalEnergy();
+            }
+        } catch (error) {
+            console.error('Error updating energy:', error);
+        }
+    }, 2000); // обновление энергии каждые 2 секунды
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    userId = getParameterByName('source') || getCookie('userId');
+    if (!userId) {
+        alert('User ID not found.');
+        return;
+    }
+
+    console.log('User ID:', userId); // Добавьте отладочный вывод
+
+    updateLocalEnergy();
+    startEnergyRegeneration();
+
+    document.getElementById('button').addEventListener('click', (event) => {
+        const rect = event.target.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        incrementCounter(x, y);
+    });
+});
     </script>
 </body>
 </html>
