@@ -220,7 +220,7 @@
 
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
-                    floatingText.innerText = `Clicks: ${newClicks}`; // Отображает количество кликов в текущем взаимодействии
+                    floatingText.innerText = `users/${userId}/clicks`; // Отображает количество кликов в текущем взаимодействии
                     floatingText.style.left = `${x}px`;
                     floatingText.style.top = `${y}px`;
                     document.querySelector('.container').appendChild(floatingText);
