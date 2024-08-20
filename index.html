@@ -38,32 +38,27 @@
             position: relative;
         }
 
-.button {
-    width: 400px; 
-    height: 400px; 
-    background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-    background-size: cover; 
-    background-position: center; 
-    border: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    margin-bottom: 20px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; 
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-    position: relative;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-    --rotate-x: 0deg;
-    --rotate-y: 0deg;
-}
+        .button {
+            width: 400px; 
+            height: 400px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transform: rotateX(0deg) rotateY(0deg); /* Изначальный трансформ */
+        }
 
-.button.clicked {
-    transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
-}
-        
         .energy-counter {
             font-size: 48px; 
             color: #f0b924;
@@ -112,7 +107,7 @@
                 position: relative;
             }
             
-            .counter{
+            .counter {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
@@ -288,6 +283,16 @@ function startEnergyRegeneration() {
     }, 2000); // обновление энергии каждые 2 секунды
 }
 
+function calculateRotation(x, y, width, height) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const deltaX = x - centerX;
+    const deltaY = y - centerY;
+    const angleX = (deltaY / centerY) * 30; // Угол наклона по X
+    const angleY = (deltaX / centerX) * -30; // Угол наклона по Y
+    return { angleX, angleY };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     userId = getParameterByName('source') || getCookie('userId');
     if (!userId) {
@@ -304,6 +309,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = event.target.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
+
+        const { angleX, angleY } = calculateRotation(x, y, rect.width, rect.height);
+
+        document.getElementById('button').style.transform = `rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+        
         incrementCounter(x, y);
     });
 });
