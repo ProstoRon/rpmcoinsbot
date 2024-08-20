@@ -138,7 +138,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -187,7 +187,8 @@
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
                 if (energy !== null) {
@@ -206,9 +207,18 @@
             }, (error) => {
                 console.error('Error reading max energy:', error);
             });
+
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val();
+                if (totalClicks !== null) {
+                    document.getElementById('counter').innerText = totalClicks;
+                }
+            }, (error) => {
+                console.error('Error reading total clicks:', error);
+            });
         }
 
-        async function incrementCounter(e) {
+        async function incrementCounter() {
             if (!userId) return;
 
             try {
@@ -232,8 +242,6 @@
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
                     floatingText.innerText = '+1';
-                    floatingText.style.left = `${e.clientX}px`; // Позиционирование по X
-                    floatingText.style.top = `${e.clientY}px`; // Позиционирование по Y
                     document.body.appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
@@ -249,34 +257,39 @@
                 try {
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+                    
+                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                        get(userEnergyRef),
+                        get(userMaxEnergyRef)
+                    ]);
 
-                    const energySnapshot = await get(userEnergyRef);
-                    const maxEnergySnapshot = await get(userMaxEnergyRef);
+                    const energy = energySnapshot.val() || 0;
+                    const maxEnergy = maxEnergySnapshot.val() || 0;
 
-                    const energy = energySnapshot.val();
-                    const maxEnergy = maxEnergySnapshot.val();
-
-                    if (energy !== null && maxEnergy !== null) {
-                        if (energy < maxEnergy) {
-                            await set(userEnergyRef, Math.min(energy + 1, maxEnergy));
-                        }
+                    if (energy < maxEnergy) {
+                        await set(userEnergyRef, energy + 1);
+                        updateLocalEnergy();
                     }
                 } catch (error) {
                     console.error('Error updating energy:', error);
                 }
-            }, 2000); // Регистрация энергии каждые 2 секунды
+            }, 3000); // обновление энергии каждые 2 секунды
         }
 
-        window.onload = () => {
-            userId = getParameterByName('userId') || getCookie('userId');
-            
-            if (userId) {
-                updateLocalEnergy();
-                startEnergyRegeneration();
+        document.addEventListener('DOMContentLoaded', () => {
+            userId = getParameterByName('source') || getCookie('userId');
+            if (!userId) {
+                alert('User ID not found.');
+                return;
             }
 
+            console.log('User ID:', userId); // Добавьте отладочный вывод
+
+            updateLocalEnergy();
+            startEnergyRegeneration();
+
             document.getElementById('button').addEventListener('click', incrementCounter);
-        };
+        });
     </script>
 </body>
 </html>
