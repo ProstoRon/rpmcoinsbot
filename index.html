@@ -159,7 +159,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -182,27 +182,6 @@
             return urlParams.get(name);
         }
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
         function updateLocalEnergy() {
             if (!userId) return;
 
@@ -213,7 +192,6 @@
                 const energy = snapshot.val();
                 if (energy !== null) {
                     document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
                 console.error('Error reading energy:', error);
@@ -222,24 +200,15 @@
             onValue(userMaxEnergyRef, (snapshot) => {
                 const maxEnergy = snapshot.val();
                 if (maxEnergy !== null) {
-                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
+                    // Можно добавить логику для обработки maxEnergy, если нужно
                 }
             }, (error) => {
                 console.error('Error reading maxEnergy:', error);
             });
         }
 
-        async function updateClickCounter() {
-            if (!userId) return;
-
-            try {
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const totalClicksSnapshot = await get(userTotalClicksRef);
-                const totalClicks = totalClicksSnapshot.val() || 0;
-                document.getElementById('counter').innerText = totalClicks;
-            } catch (error) {
-                console.error('Error fetching total clicks:', error);
-            }
+        function updateClickCounter(totalClicks) {
+            document.getElementById('counter').innerText = totalClicks;
         }
 
         async function incrementCounter(event) {
@@ -260,6 +229,7 @@
                 
                 if (energy <= 0) return;
 
+                // Локально обновляем счётчик кликов и энергию
                 await runTransaction(userEnergyRef, (currentEnergy) => {
                     if ((currentEnergy || 0) > 0) {
                         return (currentEnergy || 0) - 1; 
@@ -267,11 +237,12 @@
                     return currentEnergy;
                 });
 
-                await runTransaction(userTotalClicksRef, (currentClicks) => {
-                    return (currentClicks || 0) + 1;
+                const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
+                await runTransaction(userTotalClicksRef, () => {
+                    return newTotalClicks + 1;
                 });
 
-                await updateClickCounter(); // Обновляем счётчик кликов
+                updateClickCounter(newTotalClicks + 1); // Обновляем счётчик кликов
 
                 const button = document.getElementById('button');
                 const rect = button.getBoundingClientRect();
@@ -309,7 +280,7 @@
                 userInfo.innerText = `User ID: ${userId}`;
 
                 updateLocalEnergy();
-                updateClickCounter(); // Обновляем счётчик кликов при загрузке страницы
+                updateClickCounter((document.getElementById('counter').innerText || 0));
 
                 const button = document.getElementById('button');
                 button.addEventListener('click', incrementCounter);
