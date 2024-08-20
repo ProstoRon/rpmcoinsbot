@@ -35,7 +35,7 @@
         .container {
             display: block;
             text-align: center;
-            position: relative;
+            position: relative; /* Добавлено для позиционирования дочерних элементов */
         }
 
         .button {
@@ -241,61 +241,29 @@
 
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
-                    floatingText.innerText = `${clicks}`;
+                    floatingText.innerText = `Click!`; // Пример текста
                     floatingText.style.left = `${x}px`;
                     floatingText.style.top = `${y}px`;
-                    document.body.appendChild(floatingText);
+                    document.querySelector('.container').appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
             } catch (error) {
-                console.error('Error handling click:', error);
+                console.error('Error updating counter:', error);
             }
         }
 
-        function startEnergyRegeneration() {
-            setInterval(async () => {
-                if (!userId) return;
-
-                try {
-                    const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                    
-                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                        get(userEnergyRef),
-                        get(userMaxEnergyRef)
-                    ]);
-
-                    const energy = energySnapshot.val() || 0;
-                    const maxEnergy = maxEnergySnapshot.val() || 0;
-
-                    if (energy < maxEnergy) {
-                        await set(userEnergyRef, energy + 1);
-                        updateLocalEnergy();
-                    }
-                } catch (error) {
-                    console.error('Error updating energy:', error);
-                }
-            }, 2000); // обновление энергии каждые 2 секунды
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            userId = getParameterByName('source') || getCookie('userId');
-            if (!userId) {
-                alert('User ID not found.');
-                return;
+        window.onload = () => {
+            userId = getParameterByName('userId') || getCookie('userId');
+            if (userId) {
+                updateLocalEnergy();
             }
+        };
 
-            console.log('User ID:', userId); // Добавьте отладочный вывод
-
-            updateLocalEnergy();
-            startEnergyRegeneration();
-
-            document.getElementById('button').addEventListener('click', (event) => {
-                const rect = event.target.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                incrementCounter(x, y);
-            });
+        document.getElementById('button').addEventListener('click', (event) => {
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left + window.scrollX;
+            const y = event.clientY - rect.top + window.scrollY;
+            incrementCounter(x, y);
         });
     </script>
 </body>
