@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
-        /* Общие стили для всех устройств */
         body {
             display: flex;
             justify-content: center;
@@ -120,7 +119,6 @@
             object-fit: cover;
         }
 
-        /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
                 width: 400px; 
@@ -156,7 +154,6 @@
     </div>
     <div class="user-info" id="user-info"></div>
 
-    <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
@@ -176,58 +173,6 @@
         const database = getDatabase(app);
 
         let userId = null;
-
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        function updateLocalEnergy() {
-            if (!userId) return;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                if (energy !== null) {
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
-                }
-            }, (error) => {
-                console.error('Error reading energy:', error);
-            });
-
-            onValue(userMaxEnergyRef, (snapshot) => {
-                const maxEnergy = snapshot.val();
-                if (maxEnergy !== null) {
-                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
-                }
-            }, (error) => {
-                console.error('Error reading maxEnergy:', error);
-            });
-        }
 
         async function incrementCounter(x, y) {
             if (!userId) return;
@@ -276,61 +221,7 @@
             }
         }
 
-        function getTelegramUserData() {
-            const telegramInitData = getParameterByName('telegramData');
-
-            if (telegramInitData) {
-                const parsedData = JSON.parse(decodeURIComponent(telegramInitData));
-                return {
-                    id: parsedData.id,
-                    username: parsedData.username,
-                    avatar: parsedData.photo_url
-                };
-            }
-            return null;
-        }
-
-        function showUserInfo(userData) {
-            const userInfoContainer = document.getElementById('user-info');
-            const avatarElement = document.createElement('img');
-            avatarElement.src = userData.avatar;
-            avatarElement.classList.add('rounded-image');
-
-            const usernameElement = document.createElement('span');
-            usernameElement.textContent = `@${userData.username}`;
-
-            userInfoContainer.appendChild(avatarElement);
-            userInfoContainer.appendChild(usernameElement);
-        }
-
         document.addEventListener("DOMContentLoaded", async () => {
-            const telegramData = getTelegramUserData();
-            const savedUserId = getCookie('userId');
-
-            if (telegramData) {
-                userId = telegramData.id;
-                showUserInfo(telegramData);
-                setCookie('userId', userId, 7);
-            } else if (savedUserId) {
-                userId = savedUserId;
-            } else {
-                redirectToRegistration();
-                return;
-            }
-
-            const userRef = ref(database, `users/${userId}`);
-            const userSnapshot = await get(userRef);
-
-            if (!userSnapshot.exists()) {
-                await set(userRef, {
-                    energy: 100,
-                    maxEnergy: 1000,
-                    totalClicks: 0
-                });
-            }
-
-            updateLocalEnergy();
-
             document.getElementById("button").addEventListener("click", function(event) {
                 const x = event.clientX;
                 const y = event.clientY;
