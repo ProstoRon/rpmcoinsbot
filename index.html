@@ -1,3 +1,5 @@
+
+Вы сказали:
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
+        /* Общие стили для всех устройств */
         body {
             display: flex;
             justify-content: center;
@@ -38,45 +41,39 @@
         }
 
         .button {
-            width: 400px;
-            height: 400px;
-            background-image: url('https://i.imgur.com/5Yn6qnN.png');
-            background-size: cover;
-            background-position: center;
+            width: 400px; 
+            height: 400px; 
+            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+            background-size: cover; 
+            background-position: center; 
             border: none;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
             outline: none;
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
-            --rotate-x: 0deg;
-            --rotate-y: 0deg;
-        }
-
-        .button.clicked {
-            transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
         }
 
         .energy-counter {
-            font-size: 48px;
+            font-size: 48px; 
             color: #f0b924;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
             font-family: 'Nunito';
             top: 30px;
         }
 
         .counter {
-            font-size: 48px;
+            font-size: 48px; 
             color: #333;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
             top: 40px;
         }
 
@@ -88,7 +85,7 @@
             animation: floatUp 1s ease forwards;
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease; 
         }
 
         @keyframes floatUp {
@@ -102,26 +99,27 @@
             }
         }
 
+        /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 400px;
-                height: 400px;
+                width: 400px; 
+                height: 400px; 
                 top: 100px;
                 position: relative;
             }
-
+            
             .counter {
-                font-size: 36px;
+                font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
                 top: 50px;
             }
-
+            
             .energy-counter {
-                font-size: 48px;
+                font-size: 48px; 
                 color: #f0b924;
                 font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
                 font-family: 'Nunito';
                 top: 30px;
             }
@@ -135,120 +133,194 @@
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
 
+    <!-- Подключаем Firebase -->
     <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-    authDomain: "rpmcoins-48e4f.firebaseapp.com",
-    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-    projectId: "rpmcoins-48e4f",
-    storageBucket: "rpmcoins-48e4f.appspot.com",
-    messagingSenderId: "764805793058",
-    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-    measurementId: "G-S2PRPR80F5"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+        authDomain: "rpmcoins-48e4f.firebaseapp.com",
+        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+        projectId: "rpmcoins-48e4f",
+        storageBucket: "rpmcoins-48e4f.appspot.com",
+        messagingSenderId: "764805793058",
+        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+        measurementId: "G-S2PRPR80F5"
+    };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-let userId = null;
+    let userId = null;
 
-function getParameterByName(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-}
-
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
     }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
-}
 
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
     }
-    return null;
-}
 
-function updateLocalEnergy() {
-    if (!userId) return;
-
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        if (energy !== null) {
-            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-            setCookie('energy', energy, 1);
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            return null;
         }
-    }, (error) => {
-        console.error('Error reading energy:', error);
-    });
+    }
 
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        if (maxEnergy !== null) {
-            setCookie('maxEnergy', maxEnergy, 1);
-        }
-    }, (error) => {
-        console.error('Error reading max energy:', error);
-    });
+    function updateLocalEnergy() {
+        if (!userId) return;
 
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val();
-        if (totalClicks !== null) {
-            document.getElementById('counter').innerText = totalClicks;
-        }
-    }, (error) => {
-        console.error('Error reading total clicks:', error);
-    });
-}
-
-async function incrementCounter(x, y) {
-    if (!userId) return;
-
-    try {
         const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
         const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-        const userClicksRef = ref(database, `users/${userId}/clicks`);
 
-        const energySnapshot = await get(userEnergyRef);
-        const energy = energySnapshot.val() || 0;
+        onValue(userEnergyRef, (snapshot) => {
+            const energy = snapshot.val();
+            if (energy !== null) {
+                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+                setCookie('energy', energy, 1);
+            }
+        }, (error) => {
+            console.error('Error reading energy:', error);
+        });
 
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            const currentClicks = (await get(userClicksRef)).val() || 0;
-            const totalClicksSnapshot = await get(userTotalClicksRef);
-            const currentTotalClicks = totalClicksSnapshot.val() || 0;
+        onValue(userMaxEnergyRef, (snapshot) => {
+            const maxEnergy = snapshot.val();
+            if (maxEnergy !== null) {
+                setCookie('maxEnergy', maxEnergy, 1);
+            }
+        }, (error) => {
+            console.error('Error reading max energy:', error);
+        });
 
-            await Promise.all([
-                set(userEnergyRef, newEnergy),
-                set(userTotalClicksRef, currentTotalClicks + currentClicks)
-            ]);
+        onValue(userTotalClicksRef, (snapshot) => {
+            const totalClicks = snapshot.val();
+            if (totalClicks !== null) {
+                document.getElementById('counter').innerText = totalClicks;
+            }
+        }, (error) => {
+            console.error('Error reading total clicks:', error);
+        });
+    }
 
-            updateLocalEnergy();
+    async function displayUserClicks(x, y) {
+        if (!userId) return;
+
+        try {
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
+            const clicksSnapshot = await get(userClicksRef);
+            const currentClicks = clicksSnapshot.val() || 0;
 
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+${currentClicks}`;
+            floatingText.innerText = `Clicks: ${currentClicks}`;
             floatingText.style.position = 'absolute';
 
-            const rect = document.getElementById('button').getBoundingClientRect();
-            floatingText.style.left = `${x + rect.left}px`;
-            floatingText.style.top = `${y + rect.top}px`;
+            // Учет скролла страницы и родительского элемента
+            const buttonRect = document.getElementById('button').getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            floatingText.style.top = `${y + buttonRect.top - scrollTop}px`;
+            floatingText.style.left = `${x + buttonRect.left - scrollLeft}px`;
 
             document.body.appendChild(floatingText);
-            setTimeout(() => floating
+
+            setTimeout(() => {
+                document.body.removeChild(floatingText);
+            }, 1000); // Удаление элемента через 1 секунду
+        } catch (error) {
+            console.error('Error displaying user clicks:', error);
+        }
+    }
+
+    function startEnergyRegeneration() {
+        if (!userId) return;
+
+        const energyRef = ref(database, `users/${userId}/energy`);
+        const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+        setInterval(async () => {
+            try {
+                const energySnapshot = await get(energyRef);
+                const maxEnergySnapshot = await get(maxEnergyRef);
+
+                const currentEnergy = energySnapshot.val();
+                const maxEnergy = maxEnergySnapshot.val();
+
+                if (currentEnergy < maxEnergy) {
+                    await set(energyRef, Math.min(currentEnergy + 1, maxEnergy));
+                    updateLocalEnergy();
+                }
+            } catch (error) {
+                console.error('Error regenerating energy:', error);
+            }
+        }, 2000); // Обновляем каждую 2 секунды
+    }
+
+    function calculateRotation(x, y, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        const deltaX = x - centerX;
+        const deltaY = y - centerY;
+
+        const angleX = (deltaY / centerY) * 30; // Поворот по оси X
+        const angleY = (deltaX / centerX) * -30; // Поворот по оси Y
+
+        return { angleX, angleY };
+    }
+
+    let isAnimating = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        userId = getParameterByName('source') || getCookie('userId');
+        if (!userId) {
+            alert('User ID not found.');
+            return;
+        }
+
+        console.log('User ID:', userId);
+
+        updateLocalEnergy();
+        startEnergyRegeneration();
+
+        document.getElementById('button').addEventListener('click', async (event) => {
+            if (isAnimating) return; // Если анимация уже идет, ничего не делаем
+
+            isAnimating = true; // Устанавливаем флаг анимации
+
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const { angleX, angleY } = calculateRotation(x, y, rect.width, rect.height);
+
+            const button = document.getElementById('button');
+            button.style.transform = `rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+
+            await displayUserClicks(x, y); // Показываем значение clicks
+
+            setTimeout(() => {
+                button.style.transform = `rotateX(0deg) rotateY(0deg)`; // Возвращаем в исходное положение
+                setTimeout(() => {
+                    isAnimating = false; // Сбрасываем флаг анимации
+                }, 200); // Длительность анимации возвращения
+            }, 200); // Длительность анимации поворота
+        });
+    });
+    </script>
+</body>
+</html>
