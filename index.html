@@ -88,7 +88,6 @@
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
-            right: 50px;
         }
 
         @keyframes floatUp {
@@ -162,27 +161,6 @@
             return urlParams.get(name);
         }
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
         function updateLocalEnergy() {
             if (!userId) return;
 
@@ -194,7 +172,6 @@
                 const energy = snapshot.val();
                 if (energy !== null) {
                     document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
                 console.error('Error reading energy:', error);
@@ -203,7 +180,7 @@
             onValue(userMaxEnergyRef, (snapshot) => {
                 const maxEnergy = snapshot.val();
                 if (maxEnergy !== null) {
-                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
+                    // Handle max energy if needed
                 }
             }, (error) => {
                 console.error('Error reading max energy:', error);
@@ -242,10 +219,10 @@
 
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
-                    floatingText.innerText = '+1';
+                    floatingText.innerText = `+1 (${newTotalClicks + 1})`; // Отображает количество кликов
                     floatingText.style.left = `${x}px`;
                     floatingText.style.top = `${y}px`;
-                    document.body.appendChild(floatingText);
+                    document.querySelector('.container').appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
             } catch (error) {
@@ -285,8 +262,6 @@
                 alert('User ID not found.');
                 return;
             }
-
-            console.log('User ID:', userId); // Добавьте отладочный вывод
 
             updateLocalEnergy();
             startEnergyRegeneration();
