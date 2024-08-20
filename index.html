@@ -243,7 +243,7 @@ async function incrementCounter(x, y) {
 
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `Clicks: ${currentClicks}`;
+            floatingText.innerText = `+${currentClicks}`;
             floatingText.style.left = `${x}px`;
             floatingText.style.top = `${y}px`;
             document.body.appendChild(floatingText);
