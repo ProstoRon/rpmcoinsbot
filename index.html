@@ -115,7 +115,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" id="button" onclick="incrementCounter(event)"></div>
+        <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
     </div>
     <div class="user-info" id="user-info"></div>
@@ -255,6 +255,7 @@
 
         document.getElementById('button').addEventListener('mousemove', applyButtonTilt);
         document.getElementById('button').addEventListener('mouseleave', resetButtonTilt);
+        document.getElementById('button').addEventListener('click', incrementCounter);
 
         displayUserData();
     </script>
