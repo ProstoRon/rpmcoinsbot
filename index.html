@@ -4,7 +4,7 @@
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body {
+body {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -23,9 +23,12 @@
         #000 80%,         /* Чёрный цвет для краёв */
         #000 100%         /* Чёрный цвет для краёв */
     );
+    background-size: cover;
     font-family: Arial, sans-serif;
     overflow: hidden;
     position: center;
+    backdrop-filter: blur(10px); /* Размытие фона */
+    color: #fff; /* Цвет текста для контраста */
 }
 
         .container {
