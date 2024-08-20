@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
-        /* Общие стили для всех устройств */
+        /* Стили для мобильных устройств */
         body {
             display: flex;
             justify-content: center;
@@ -14,22 +14,23 @@
             margin: 0;
             background: linear-gradient(
                 45deg,
-                #000 0%,
-                #000 20%,
-                #a41a7e 20%,
-                #a41a7e 40%,
-                #910179 40%,
-                #910179 60%,
-                #a41a7e 60%,
-                #a41a7e 80%,
-                #000 80%,
-                #000 100%
+                #000 0%,          /* Чёрный цвет для краёв */
+                #000 20%,         /* Более широкий чёрный участок */
+                #a41a7e 20%,      /* Плавный переход в более светлый фиолетовый */
+                #a41a7e 40%,      /* Середина с более светлым фиолетовым */
+                #910179 40%,      /* Основной фиолетовый цвет */
+                #910179 60%,      /* Основной фиолетовый цвет */
+                #a41a7e 60%,      /* Плавный переход в более светлый фиолетовый */
+                #a41a7e 80%,      /* Более светлый фиолетовый в конце */
+                #000 80%,         /* Чёрный цвет для краёв */
+                #000 100%         /* Чёрный цвет для краёв */
             );
             background-size: cover;
             font-family: Arial, sans-serif;
             overflow: hidden;
-            backdrop-filter: blur(30px);
-            color: #fff;
+            position: center;
+            backdrop-filter: blur(30px); /* Размытие фона */
+            color: #fff; /* Цвет текста для контраста */
         }
 
         .container {
@@ -39,8 +40,8 @@
         }
 
         .button {
-            width: 400px; 
-            height: 400px; 
+            width: 500px; 
+            height: 500px; 
             background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
             background-size: cover; 
             background-position: center; 
@@ -71,14 +72,14 @@
             top: 30px;
         }
 
-        .counter {
+        .counter{
             font-size: 48px; 
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
             top: 40px;
         }
-
+        
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
@@ -120,32 +121,23 @@
             object-fit: cover;
         }
 
-        /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 400px; 
-                height: 400px; 
+                width: 0px; 
+                height: 0px; 
                 top: 100px;
                 position: relative;
             }
             
-            .counter{
-                font-size: 36px; 
+            .counter, .energy-counter {
+                font-size: 0px; 
                 position: absolute;
-                bottom: 0px;
-                top: 50px;
+                bottom: 0px; /* Переместили счётчик кликов ниже */
             }
-            
-            .energy-counter {
-               font-size: 48px; 
-               color: #f0b924;
-               font-weight: bold;
-               text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-               font-family: 'Nunito';
-               top: 30px;
-           }
+            .button:active {
+            }
         }
-
+        
     </style>
 </head>
 <body>
@@ -261,17 +253,10 @@
                 const counter = document.getElementById('counter');
                 counter.innerText = parseInt(counter.innerText) + 1;
 
-                const button = document.getElementById('button');
-                const rect = button.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-
                 const newFloatText = document.createElement('div');
                 newFloatText.className = 'floating-text';
                 newFloatText.innerText = "+1";
-                newFloatText.style.left = ${x}px;
-                newFloatText.style.top = ${y}px;
-                button.appendChild(newFloatText);
+                document.body.appendChild(newFloatText);
 
                 setTimeout(() => {
                     newFloatText.remove();
@@ -300,3 +285,4 @@
 
     </script>
 </body>
+</html>
