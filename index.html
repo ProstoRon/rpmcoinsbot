@@ -46,7 +46,7 @@
             transform: scale(0.9); 
         }
 
-        .counter {
+        .counter, .energy {
             font-size: 48px; 
             color: #333;
             font-weight: bold;
@@ -102,7 +102,7 @@
                 position: relative;
             }
             
-            .counter {
+            .counter, .energy {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 300px;
@@ -117,6 +117,7 @@
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
+        <div class="energy" id="energy">Energy: 100</div> <!-- Добавлен счётчик энергии -->
     </div>
     <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
@@ -140,6 +141,8 @@
         const database = getDatabase(app);
 
         let userId = null;
+        const MAX_ENERGY = 100;
+        const ENERGY_REGEN_INTERVAL = 2000; // 2 секунды
 
         function setCookie(name, value, days) {
             const d = new Date();
@@ -176,21 +179,41 @@
             });
         }
 
+        function updateEnergyDisplay() {
+            const energy = getCookie('energy');
+            document.getElementById('energy').innerText = `Energy: ${energy || MAX_ENERGY}`;
+        }
+
+        function regenerateEnergy() {
+            let energy = parseInt(getCookie('energy') || MAX_ENERGY);
+            if (energy < MAX_ENERGY) {
+                energy += 1;
+                setCookie('energy', energy, 1); // Обновляем значение куки
+                updateEnergyDisplay();
+            }
+        }
+
         window.incrementCounter = async function(event) {
-            if (!userId) return;
+            let energy = parseInt(getCookie('energy') || MAX_ENERGY);
+            if (energy > 0) {
+                try {
+                    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            try {
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                    await runTransaction(userTotalClicksRef, (currentValue) => {
+                        return (currentValue || 0) + 1;
+                    });
 
-                await runTransaction(userTotalClicksRef, (currentValue) => {
-                    return (currentValue || 0) + 1;
-                });
+                    const updatedCount = (await get(userTotalClicksRef)).val();
+                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
 
-                const updatedCount = (await get(userTotalClicksRef)).val();
-                document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                showFloatingText(event, 1);
-            } catch (error) {
-                console.error('Error updating counter:', error);
+                    // Списание энергии
+                    energy -= 1;
+                    setCookie('energy', energy, 1);
+                    updateEnergyDisplay();
+                    showFloatingText(event, 1);
+                } catch (error) {
+                    console.error('Error updating counter:', error);
+                }
             }
         };
 
@@ -271,6 +294,8 @@
         function init() {
             document.getElementById('button').addEventListener('mousedown', handleMouseDown);
             displayUserData();
+            updateEnergyDisplay();
+            setInterval(regenerateEnergy, ENERGY_REGEN_INTERVAL); // Запуск восстановления энергии
         }
 
         init();
