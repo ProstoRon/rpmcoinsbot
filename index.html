@@ -10,12 +10,20 @@
     align-items: center;
     height: 100vh;
     margin: 0;
-    background: linear-gradient(135deg, #7b1fa2, #c2185b),
-                radial-gradient(circle at top left, rgba(255, 255, 255, 0.3), transparent 60%);
+    background: linear-gradient(
+        45deg,
+        #000 0%,          /* Чёрный цвет для краёв */
+        #000 10%,         /* Чёрный цвет в начале градиента */
+        #910179 10%,      /* Фиолетовый цвет в середине градиента */
+        #910179 90%,      /* Фиолетовый цвет в середине градиента */
+        #000 90%,         /* Чёрный цвет в конце градиента */
+        #000 100%         /* Чёрный цвет для краёв */
+    );
     font-family: Arial, sans-serif;
     overflow: hidden;
     position: center;
 }
+
 
 
 
