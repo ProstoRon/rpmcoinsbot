@@ -151,7 +151,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, set, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -167,89 +167,71 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Функция для получения параметра из URL
+        let userId = null;
+
         function getParameterByName(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        const userId = getParameterByName('source'); // Получаем ID пользователя из параметров URL
+        function updateEnergy() {
+            if (!userId) return;
 
-        if (userId) {
             const userRef = ref(database, `users/${userId}`);
-            const energyRef = ref(database, `users/${userId}/energy`);
-            const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            const clicksRef = ref(database, `users/${userId}/clicks`);
 
-            // Отображение информации о пользователе
-            onValue(userRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    const energy = userData.energy || 0;
-                    const maxEnergy = userData.maxEnergy || 1000;
-                    const clicks = userData.clicks || 0;
+            setInterval(async () => {
+                try {
+                    const userSnapshot = await get(userRef);
+                    if (userSnapshot.exists()) {
+                        const data = userSnapshot.val();
+                        let energy = data.energy || 0;
+                        const maxEnergy = data.maxEnergy || 1000;
 
-                    document.getElementById('energy-counter').textContent = `Energy: ${energy}`;
-                    document.getElementById('counter').textContent = clicks;
-
-                    // Восстановление энергии
-                    setInterval(async () => {
-                        const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                            get(energyRef),
-                            get(maxEnergyRef)
-                        ]);
-
-                        let currentEnergy = energySnapshot.val() || 0;
-                        const maxEnergyValue = maxEnergySnapshot.val() || 1000;
-
-                        if (currentEnergy < maxEnergyValue) {
-                            currentEnergy += 1; // Восстанавливаем энергию на 1 единицу
-                            if (currentEnergy > maxEnergyValue) {
-                                currentEnergy = maxEnergyValue;
-                            }
-                            await set(energyRef, currentEnergy);
-                            document.getElementById('energy-counter').textContent = `Energy: ${currentEnergy}`;
+                        if (energy < maxEnergy) {
+                            energy += 1; // Восстанавливаем 1 единицу энергии
+                            await set(userRef, { ...data, energy });
+                            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
                         }
-                    }, 2000); // Восстановление энергии каждые 2 секунды
+                    }
+                } catch (error) {
+                    console.error('Error updating energy:', error);
+                }
+            }, 2000); // Обновляем энергию каждые 2 секунды
+        }
 
-                    // Обработчик кликов
-                    document.getElementById('button').addEventListener('click', async () => {
-                        try {
-                            // Проверяем, есть ли достаточно энергии
-                            const energySnapshot = await get(energyRef);
-                            const currentEnergy = energySnapshot.val() || 0;
+        function initializeUser() {
+            userId = getParameterByName('source');
+            if (userId) {
+                const userRef = ref(database, `users/${userId}`);
 
-                            if (currentEnergy > 0) {
-                                // Уменьшаем энергию на 1
-                                await runTransaction(energyRef, (current) => {
-                                    return (current || 0) - 1;
-                                });
+                onValue(userRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        document.getElementById('user-info').innerText = `User ID: ${userId}`;
+                        document.getElementById('energy-counter').innerText = `Energy: ${data.energy || 0}`;
+                        updateEnergy();
+                    } else {
+                        console.error('User not found');
+                    }
+                });
 
-                                // Увеличиваем количество кликов
-                                await runTransaction(clicksRef, (current) => {
-                                    return (current || 0) + 1;
-                                });
-
-                                // Обновляем счётчик кликов
-                                const clicksSnapshot = await get(clicksRef);
-                                const clicks = clicksSnapshot.val() || 0;
-                                document.getElementById('counter').textContent = clicks;
-                            } else {
-                                console.log('Not enough energy');
-                            }
-                        } catch (error) {
-                            console.error('Error updating clicks or energy:', error);
+                const button = document.getElementById('button');
+                button.addEventListener('click', async () => {
+                    const userRef = ref(database, `users/${userId}`);
+                    await runTransaction(userRef, (data) => {
+                        if (data && data.energy > 0) {
+                            data.energy -= 1; // Уменьшаем энергию на 1
+                            document.getElementById('energy-counter').innerText = `Energy: ${data.energy}`;
+                            return data;
+                        } else {
+                            return; // Не изменяем данные, если энергии нет
                         }
                     });
-                } else {
-                    console.error('User data not found.');
-                }
-            }, (error) => {
-                console.error('Error fetching user data:', error);
-            });
-        } else {
-            console.error('No user ID found in URL.');
+                });
+            }
         }
+
+        initializeUser();
     </script>
 </body>
 </html>
