@@ -88,6 +88,7 @@
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
+            white-space: nowrap;
         }
 
         @keyframes floatUp {
@@ -97,7 +98,7 @@
             }
             100% {
                 opacity: 0;
-                transform: translateY(-100px);
+                transform: translateY(-50px);
             }
         }
 
@@ -110,7 +111,7 @@
                 position: relative;
             }
             
-            .counter{
+            .counter {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
@@ -118,13 +119,13 @@
             }
             
             .energy-counter {
-               font-size: 48px; 
-               color: #f0b924;
-               font-weight: bold;
-               text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-               font-family: 'Nunito';
-               top: 30px;
-           }
+                font-size: 48px; 
+                color: #f0b924;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+                font-family: 'Nunito';
+                top: 30px;
+            }
         }
     </style>
 </head>
@@ -208,7 +209,7 @@
             });
         }
 
-        async function incrementCounter() {
+        async function incrementCounter(e) {
             if (!userId) return;
 
             try {
@@ -229,10 +230,17 @@
 
                     updateLocalEnergy();
 
+                    const button = document.querySelector('.button');
+                    const rect = button.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
                     floatingText.innerText = '+1';
-                    document.body.appendChild(floatingText);
+                    floatingText.style.left = `${x}px`;
+                    floatingText.style.top = `${y}px`;
+                    document.querySelector('.container').appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
             } catch (error) {
@@ -241,13 +249,13 @@
         }
 
         function startEnergyRegeneration() {
-            setInterval(async () => {
-                if (!userId) return;
+            if (!userId) return;
 
+            setInterval(async () => {
                 try {
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                    
+
                     const [energySnapshot, maxEnergySnapshot] = await Promise.all([
                         get(userEnergyRef),
                         get(userMaxEnergyRef)
