@@ -225,25 +225,19 @@
                     setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
-                console.error('Error reading maxEnergy:', error);
+                console.error('Error reading max energy:', error);
             });
         }
 
-        async function incrementCounter(event) {
+        async function incrementCounter() {
             if (!userId) return;
 
             try {
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                
-                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                    get(userEnergyRef),
-                    get(userMaxEnergyRef)
-                ]);
-                
+
+                const energySnapshot = await get(userEnergyRef);
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 0;
                 
                 if (energy > 0) {
                     const newEnergy = energy - 1;
@@ -294,11 +288,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            userId = getParameterByName('userId') || getCookie('userId');
+            userId = getParameterByName('source') || getCookie('userId');
             if (!userId) {
                 alert('User ID not found.');
                 return;
             }
+
+            console.log('User ID:', userId); // Добавьте отладочный вывод
 
             updateLocalEnergy();
             startEnergyRegeneration();
