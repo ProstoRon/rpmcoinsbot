@@ -10,7 +10,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: linear-gradient(to right, #00c6ff, #0072ff); /* Измененный градиент */
+            background: linear-gradient(to right, #00c6ff, #0072ff);
             font-family: Arial, sans-serif;
             overflow: hidden;
             position: center;
@@ -46,7 +46,7 @@
             transform: scale(0.9); 
         }
 
-        .counter, .energy {
+        .counter, .energy-counter {
             font-size: 48px; 
             color: #333;
             font-weight: bold;
@@ -102,7 +102,7 @@
                 position: relative;
             }
             
-            .counter, .energy {
+            .counter, .energy-counter {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 300px;
@@ -117,14 +117,14 @@
     <div class="container">
         <div class="button" id="button" onclick="incrementCounter(event)"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy" id="energy">Energy: 100</div> <!-- Добавлен счётчик энергии -->
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
     <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -141,19 +141,25 @@
         const database = getDatabase(app);
 
         let userId = null;
-        const MAX_ENERGY = 100;
-        const ENERGY_REGEN_INTERVAL = 2000; // 2 секунды
+
+        function getParameterByName(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
 
         function setCookie(name, value, days) {
-            const d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            let expires = "expires=" + d.toUTCString();
-            document.cookie = name + "=" + (value || "") + ";" + expires + ";path=/";
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
         }
 
         function getCookie(name) {
-            let nameEQ = name + "=";
-            let ca = document.cookie.split(';');
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
             for (let i = 0; i < ca.length; i++) {
                 let c = ca[i];
                 while (c.charAt(0) === ' ') c = c.substring(1, c.length);
@@ -162,65 +168,79 @@
             return null;
         }
 
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        function updateLocalCounter() {
+        function updateLocalEnergy() {
             if (!userId) return;
 
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                document.getElementById('counter').innerText = totalClicks !== null ? totalClicks : 0;
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val();
+                if (energy !== null) {
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
+                }
             }, (error) => {
-                console.error('Error reading counter:', error);
+                console.error('Error reading energy:', error);
+            });
+
+            onValue(userMaxEnergyRef, (snapshot) => {
+                const maxEnergy = snapshot.val();
+                if (maxEnergy !== null) {
+                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
+                }
+            }, (error) => {
+                console.error('Error reading maxEnergy:', error);
             });
         }
 
-        function updateEnergyDisplay() {
-            const energy = getCookie('energy');
-            document.getElementById('energy').innerText = `Energy: ${energy || MAX_ENERGY}`;
-        }
+        async function incrementCounter(event) {
+            if (!userId) return;
 
-        function regenerateEnergy() {
-            let energy = parseInt(getCookie('energy') || MAX_ENERGY);
-            if (energy < MAX_ENERGY) {
-                energy += 1;
-                setCookie('energy', energy, 1); // Обновляем значение куки
-                updateEnergyDisplay();
+            try {
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+                
+                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                    get(userEnergyRef),
+                    get(userMaxEnergyRef)
+                ]);
+                
+                const energy = energySnapshot.val() || 0;
+                const maxEnergy = maxEnergySnapshot.val() || 100; // устанавливаем 100 по умолчанию, если maxEnergy не найден
+                
+                if (energy <= 0) return;
+
+                await runTransaction(userEnergyRef, (currentEnergy) => {
+                    if ((currentEnergy || 0) > 0) {
+                        return (currentEnergy || 0) - 1;
+                    }
+                    return currentEnergy;
+                });
+
+                await runTransaction(userTotalClicksRef, (currentValue) => {
+                    return (currentValue || 0) + 1;
+                });
+
+                const updatedEnergy = (await get(userEnergyRef)).val();
+                const updatedCount = (await get(userTotalClicksRef)).val();
+                
+                document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
+                document.getElementById('energy-counter').innerText = `Energy: ${updatedEnergy !== null ? updatedEnergy : 0}`;
+
+                showFloatingText(event, 1);
+            } catch (error) {
+                console.error('Error updating counter:', error);
             }
         }
-
-        window.incrementCounter = async function(event) {
-            let energy = parseInt(getCookie('energy') || MAX_ENERGY);
-            if (energy > 0) {
-                try {
-                    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-                    await runTransaction(userTotalClicksRef, (currentValue) => {
-                        return (currentValue || 0) + 1;
-                    });
-
-                    const updatedCount = (await get(userTotalClicksRef)).val();
-                    document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-
-                    // Списание энергии
-                    energy -= 1;
-                    setCookie('energy', energy, 1);
-                    updateEnergyDisplay();
-                    showFloatingText(event, 1);
-                } catch (error) {
-                    console.error('Error updating counter:', error);
-                }
-            }
-        };
 
         function showFloatingText(event, clicks) {
+            if (!userId) return;
+
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = clicks;
+            floatingText.innerText = `+${clicks}`;
 
             const buttonRect = event.target.getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
@@ -244,61 +264,48 @@
                     const userData = snapshot.val();
                     if (userData) {
                         document.getElementById('user-info').innerText = `User ID: ${userData.user_id}`;
-                        updateLocalCounter();
+                        updateLocalEnergy();
                     } else {
-                        document.getElementById('user-info').innerText = 'User not found.';
+                        document.getElementById('user-info').innerText = 'User not found';
                     }
+                }, (error) => {
+                    console.error('Error reading user data:', error);
                 });
-            } else {
-                document.getElementById('user-info').innerText = 'No user ID provided.';
             }
         }
 
-        function applyButtonTilt(event) {
-            const button = document.getElementById('button');
-            const buttonRect = button.getBoundingClientRect();
-            const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-            const buttonCenterY = buttonRect.top + buttonRect.height / 2;
+        displayUserData();
 
-            const mouseX = event.clientX;
-            const mouseY = event.clientY;
+        setInterval(async () => {
+            if (!userId) return;
 
-            const deltaX = mouseX - buttonCenterX;
-            const deltaY = mouseY - buttonCenterY;
+            try {
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-            const maxTilt = 30;
+                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                    get(userEnergyRef),
+                    get(userMaxEnergyRef)
+                ]);
 
-            const tiltX = (deltaY / buttonRect.height) * maxTilt;
-            const tiltY = (deltaX / buttonRect.width) * maxTilt;
+                const energy = energySnapshot.val() || 0;
+                const maxEnergy = maxEnergySnapshot.val() || 1000;
 
-            button.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-        }
+                if (energy < maxEnergy) {
+                    await runTransaction(userEnergyRef, (currentEnergy) => {
+                        if ((currentEnergy || 0) < maxEnergy) {
+                            return (currentEnergy || 0) + 1;
+                        }
+                        return currentEnergy;
+                    });
+                }
 
-        function resetButtonTilt() {
-            const button = document.getElementById('button');
-            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        }
+                updateLocalEnergy();
+            } catch (error) {
+                console.error('Error updating energy:', error);
+            }
+        }, 2000); // обновление каждые 2 секунды
 
-        function handleMouseDown(event) {
-            applyButtonTilt(event);
-            document.addEventListener('mousemove', applyButtonTilt);
-            document.addEventListener('mouseup', handleMouseUp);
-        }
-
-        function handleMouseUp() {
-            resetButtonTilt();
-            document.removeEventListener('mousemove', applyButtonTilt);
-            document.removeEventListener('mouseup', handleMouseUp);
-        }
-
-        function init() {
-            document.getElementById('button').addEventListener('mousedown', handleMouseDown);
-            displayUserData();
-            updateEnergyDisplay();
-            setInterval(regenerateEnergy, ENERGY_REGEN_INTERVAL); // Запуск восстановления энергии
-        }
-
-        init();
     </script>
 </body>
 </html>
