@@ -294,7 +294,7 @@
                 if (energy < maxEnergy) {
                     await runTransaction(userEnergyRef, (currentEnergy) => {
                         if ((currentEnergy || 0) < maxEnergy) {
-                            return (currentEnergy || 0) + 1;
+                            return Math.min((currentEnergy || 0) + 1, maxEnergy);
                         }
                         return currentEnergy;
                     });
