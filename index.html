@@ -152,14 +152,14 @@
     <div class="container">
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
     <div class="user-info" id="user-info"></div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -182,28 +182,50 @@
             return urlParams.get(name);
         }
 
-        function updateLocalValues() {
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function updateLocalEnergy() {
             if (!userId) return;
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
             
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
                 if (energy !== null) {
                     document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
                 console.error('Error reading energy:', error);
             });
 
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                if (totalClicks !== null) {
-                    document.getElementById('counter').innerText = totalClicks;
+            onValue(userMaxEnergyRef, (snapshot) => {
+                const maxEnergy = snapshot.val();
+                if (maxEnergy !== null) {
+                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
-                console.error('Error reading totalClicks:', error);
+                console.error('Error reading maxEnergy:', error);
             });
         }
 
@@ -214,67 +236,79 @@
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
                 const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
                 const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
+                
                 const [energySnapshot, maxEnergySnapshot] = await Promise.all([
                     get(userEnergyRef),
                     get(userMaxEnergyRef)
                 ]);
-
+                
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000;
+                const maxEnergy = maxEnergySnapshot.val() || 0;
+                
+                if (energy > 0) {
+                    const newEnergy = energy - 1;
+                    const newTotalClicks = (await get(userTotalClicksRef)).val() || 0;
 
-                if (energy <= 0) return;
+                    await Promise.all([
+                        set(userEnergyRef, newEnergy),
+                        set(userTotalClicksRef, newTotalClicks + 1)
+                    ]);
 
-                document.getElementById('counter').innerText = (parseInt(document.getElementById('counter').innerText) + 1).toString();
-                document.getElementById('energy-counter').innerText = `Energy: ${energy - 1}`;
+                    updateLocalEnergy();
 
-                await Promise.all([
-                    runTransaction(userEnergyRef, currentEnergy => Math.max((currentEnergy || 0) - 1, 0)),
-                    runTransaction(userTotalClicksRef, currentClicks => (currentClicks || 0) + 1)
-                ]);
-
-                const button = document.getElementById('button');
-                const rect = button.getBoundingClientRect();
-
-                const clickPositions = (event.touches && event.touches.length > 0) 
-                    ? Array.from(event.touches).map(touch => ({
-                        x: touch.clientX - rect.left,
-                        y: touch.clientY - rect.top
-                    }))
-                    : [{ x: event.clientX - rect.left, y: event.clientY - rect.top }];
-
-                clickPositions.forEach(({ x, y }) => {
-                    const newFloatText = document.createElement('div');
-                    newFloatText.className = 'floating-text';
-                    newFloatText.innerText = "+1";
-                    newFloatText.style.left = `${x}px`;
-                    newFloatText.style.top = `${y}px`;
-                    button.appendChild(newFloatText);
-
-                    setTimeout(() => {
-                        newFloatText.remove();
-                    }, 1000);
-                });
-
+                    const floatingText = document.createElement('div');
+                    floatingText.className = 'floating-text';
+                    floatingText.innerText = '+1';
+                    document.body.appendChild(floatingText);
+                    setTimeout(() => floatingText.remove(), 1000);
+                }
             } catch (error) {
-                console.error('Error incrementing counter:', error);
+                console.error('Error handling click:', error);
             }
         }
 
-        window.addEventListener('load', () => {
-            userId = getParameterByName('source');
+        function startEnergyRegeneration() {
+            setInterval(async () => {
+                if (!userId) return;
 
+                try {
+                    const userEnergyRef = ref(database, `users/${userId}/energy`);
+                    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+                    
+                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                        get(userEnergyRef),
+                        get(userMaxEnergyRef)
+                    ]);
+
+                    const energy = energySnapshot.val() || 0;
+                    const maxEnergy = maxEnergySnapshot.val() || 0;
+
+                    if (energy < maxEnergy) {
+                        await set(userEnergyRef, energy + 1);
+                        updateLocalEnergy();
+                    }
+                } catch (error) {
+                    console.error('Error updating energy:', error);
+                }
+            }, 2000); // обновление энергии каждые 2 секунды
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            userId = getParameterByName('userId') || getCookie('userId');
+            if (!userId) {
+                alert('User ID not found.');
+                return;
+            }
+
+            updateLocalEnergy();
+            startEnergyRegeneration();
+
+            document.getElementById('button').addEventListener('click', incrementCounter);
+
+            // Set user info if userId is available
             if (userId) {
-                const userInfo = document.getElementById('user-info');
-                userInfo.innerText = `User ID: ${userId}`;
-
-                updateLocalValues();
-
-                const button = document.getElementById('button');
-                button.addEventListener('click', incrementCounter);
-                button.addEventListener('touchstart', incrementCounter);
-            } else {
-                console.log('User ID is missing.');
+                const userInfoElement = document.getElementById('user-info');
+                userInfoElement.innerHTML = `<img src="https://www.gravatar.com/avatar/${userId}" class="rounded-image" alt="User Avatar"><br>User: ${userId}`;
             }
         });
     </script>
