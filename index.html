@@ -3,7 +3,6 @@
 <head>
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
         /* Стили для мобильных устройств */
         body {
@@ -136,6 +135,7 @@
                 transform: scale(0.9); 
             }
         }
+        
     </style>
 </head>
 <body>
@@ -149,7 +149,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get, set, child, getDatabase } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -193,45 +193,94 @@
             return null;
         }
 
-        function updateLocalEnergyForAllUsers() {
-            const usersRef = ref(database, 'users');
+        function updateLocalEnergy() {
+            if (!userId) return;
 
-            onValue(usersRef, (snapshot) => {
-                snapshot.forEach(async (userSnapshot) => {
-                    const userId = userSnapshot.key;
-                    const userEnergyRef = ref(database, `users/${userId}/energy`);
-                    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val();
+                if (energy !== null) {
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
+                }
+            }, (error) => {
+                console.error('Error reading energy:', error);
+            });
 
-                    onValue(userEnergyRef, (snapshot) => {
-                        const energy = snapshot.val();
-                        if (energy !== null) {
-                            setCookie(`energy-${userId}`, energy, 1); // сохраняем в куки на 1 день
-                        }
-                    }, (error) => {
-                        console.error('Error reading energy:', error);
-                    });
+            onValue(userMaxEnergyRef, (snapshot) => {
+                const maxEnergy = snapshot.val();
+                if (maxEnergy !== null) {
+                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
+                }
+            }, (error) => {
+                console.error('Error reading maxEnergy:', error);
+            });
+        }
 
-                    onValue(userMaxEnergyRef, (snapshot) => {
-                        const maxEnergy = snapshot.val();
-                        if (maxEnergy !== null) {
-                            setCookie(`maxEnergy-${userId}`, maxEnergy, 1); // сохраняем в куки на 1 день
-                        }
-                    }, (error) => {
-                        console.error('Error reading maxEnergy:', error);
-                    });
+        async function incrementCounter(event) {
+            if (!userId) return;
 
-                    // Запуск функции восстановления энергии
-                    setInterval(async () => {
-                        const userEnergyRef = ref(database, `users/${userId}/energy`);
-                        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            try {
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+                
+                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
+                    get(userEnergyRef),
+                    get(userMaxEnergyRef)
+                ]);
+                
+                const energy = energySnapshot.val() || 0;
+                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
+                
+                if (energy <= 0) return;
 
-                        try {
-                            const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                                get(userEnergyRef),
-                                get(userMaxEnergyRef)
-                            ]);
+                await runTransaction(userEnergyRef, (currentEnergy) => {
+                    if ((currentEnergy || 0) > 0) {
+                        return (currentEnergy || 0) - 1; 
+                    }
+                    return currentEnergy;
+                });
 
-                            const energy = energySnapshot.val() || 0;
-                            const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
+                await runTransaction(userTotalClicksRef, (currentClicks) => {
+                    return (currentClicks || 0) + 1;
+                });
 
-                           
+                const counter = document.getElementById('counter');
+                counter.innerText = parseInt(counter.innerText) + 1;
+
+                const newFloatText = document.createElement('div');
+                newFloatText.className = 'floating-text';
+                newFloatText.innerText = "+1";
+                document.body.appendChild(newFloatText);
+
+                setTimeout(() => {
+                    newFloatText.remove();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error incrementing counter:', error);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            userId = getParameterByName('source');
+
+            if (userId) {
+                const userInfo = document.getElementById('user-info');
+                userInfo.innerText = `User ID: ${userId}`;
+
+                updateLocalEnergy();
+
+                const button = document.getElementById('button');
+                button.addEventListener('click', incrementCounter);
+            } else {
+                console.log('User ID is missing.');
+            }
+        });
+
+    </script>
+</body>
+</html>
