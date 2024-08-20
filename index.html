@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
-        /* Стили для мобильных устройств */
+        /* Общие стили для всех устройств */
         body {
             display: flex;
             justify-content: center;
@@ -14,23 +14,22 @@
             margin: 0;
             background: linear-gradient(
                 45deg,
-                #000 0%,          /* Чёрный цвет для краёв */
-                #000 20%,         /* Более широкий чёрный участок */
-                #a41a7e 20%,      /* Плавный переход в более светлый фиолетовый */
-                #a41a7e 40%,      /* Середина с более светлым фиолетовым */
-                #910179 40%,      /* Основной фиолетовый цвет */
-                #910179 60%,      /* Основной фиолетовый цвет */
-                #a41a7e 60%,      /* Плавный переход в более светлый фиолетовый */
-                #a41a7e 80%,      /* Более светлый фиолетовый в конце */
-                #000 80%,         /* Чёрный цвет для краёв */
-                #000 100%         /* Чёрный цвет для краёв */
+                #000 0%,
+                #000 20%,
+                #a41a7e 20%,
+                #a41a7e 40%,
+                #910179 40%,
+                #910179 60%,
+                #a41a7e 60%,
+                #a41a7e 80%,
+                #000 80%,
+                #000 100%
             );
             background-size: cover;
             font-family: Arial, sans-serif;
             overflow: hidden;
-            position: center;
-            backdrop-filter: blur(30px); /* Размытие фона */
-            color: #fff; /* Цвет текста для контраста */
+            backdrop-filter: blur(30px);
+            color: #fff;
         }
 
         .container {
@@ -72,14 +71,14 @@
             top: 30px;
         }
 
-        .counter{
+        .counter {
             font-size: 48px; 
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
             top: 40px;
         }
-        
+
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
@@ -121,6 +120,7 @@
             object-fit: cover;
         }
 
+        /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
                 width: 0px; 
@@ -132,9 +132,7 @@
             .counter, .energy-counter {
                 font-size: 0px; 
                 position: absolute;
-                bottom: 0px; /* Переместили счётчик кликов ниже */
-            }
-            .button:active {
+                bottom: 0px;
             }
         }
         
@@ -198,13 +196,13 @@
         function updateLocalEnergy() {
             if (!userId) return;
 
-            const userEnergyRef = ref(database, users/${userId}/energy);
-            const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
             
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
                 if (energy !== null) {
-                    document.getElementById('energy-counter').innerText = Energy: ${energy};
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
                     setCookie('energy', energy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
@@ -225,9 +223,9 @@
             if (!userId) return;
 
             try {
-                const userEnergyRef = ref(database, users/${userId}/energy);
-                const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
-                const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+                const userEnergyRef = ref(database, `users/${userId}/energy`);
+                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
                 
                 const [energySnapshot, maxEnergySnapshot] = await Promise.all([
                     get(userEnergyRef),
@@ -253,10 +251,17 @@
                 const counter = document.getElementById('counter');
                 counter.innerText = parseInt(counter.innerText) + 1;
 
+                const button = document.getElementById('button');
+                const rect = button.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
                 const newFloatText = document.createElement('div');
                 newFloatText.className = 'floating-text';
                 newFloatText.innerText = "+1";
-                document.body.appendChild(newFloatText);
+                newFloatText.style.left = `${x}px`;
+                newFloatText.style.top = `${y}px`;
+                button.appendChild(newFloatText);
 
                 setTimeout(() => {
                     newFloatText.remove();
@@ -272,7 +277,7 @@
 
             if (userId) {
                 const userInfo = document.getElementById('user-info');
-                userInfo.innerText = User ID: ${userId};
+                userInfo.innerText = `User ID: ${userId}`;
 
                 updateLocalEnergy();
 
