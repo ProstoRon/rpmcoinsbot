@@ -115,12 +115,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="button" id="button" onclick="incrementCounter(event)"></div>
+        <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
     <div class="user-info" id="user-info"></div>
     <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
+
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
@@ -214,7 +215,7 @@
 
                 await runTransaction(userEnergyRef, (currentEnergy) => {
                     if ((currentEnergy || 0) > 0) {
-                        return (currentEnergy || 0) - 1;
+                        return Math.max((currentEnergy || 0) - 1, 0);
                     }
                     return currentEnergy;
                 });
@@ -227,20 +228,19 @@
                 const updatedCount = (await get(userTotalClicksRef)).val();
                 
                 document.getElementById('counter').innerText = updatedCount !== null ? updatedCount : 0;
-                document.getElementById('energy-counter').innerText = `Energy: ${updatedEnergy !== null ? updatedEnergy : 0}`;
+                document.getElementById('energy-counter').innerText = updatedEnergy !== null ? `Energy: ${updatedEnergy}` : `Energy: 0`;
 
-                showFloatingText(event, 1);
+                showFloatingText(event);
+
             } catch (error) {
-                console.error('Error updating counter:', error);
+                console.error('Error incrementing counter:', error);
             }
         }
 
-        function showFloatingText(event, clicks) {
-            if (!userId) return;
-
+        function showFloatingText(event) {
             const floatingText = document.createElement('div');
             floatingText.className = 'floating-text';
-            floatingText.innerText = `+${clicks}`;
+            floatingText.innerText = `+1`;
 
             const buttonRect = document.getElementById('button').getBoundingClientRect();
             const x = event.clientX - buttonRect.left;
@@ -305,6 +305,8 @@
                 console.error('Error updating energy:', error);
             }
         }, 2000); // обновление каждые 2 секунды
+
+        document.getElementById('button').addEventListener('click', incrementCounter);
     </script>
 </body>
 </html>
