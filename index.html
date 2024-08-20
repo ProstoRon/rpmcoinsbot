@@ -39,8 +39,8 @@
         }
 
         .button {
-            width: 500px; 
-            height: 500px; 
+            width: 400px; 
+            height: 400px; 
             background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
             background-size: cover; 
             background-position: center; 
@@ -123,17 +123,27 @@
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 0px; 
-                height: 0px; 
+                width: 400px; 
+                height: 400px; 
                 top: 100px;
                 position: relative;
             }
             
-            .counter, .energy-counter {
-                font-size: 0px; 
+            .counter{
+                font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
+                top: 50px;
             }
+            
+            .energy-counter {
+               font-size: 48px; 
+               color: #f0b924;
+               font-weight: bold;
+               text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+               font-family: 'Nunito';
+               top: 30px;
+           }
         }
         
     </style>
@@ -149,7 +159,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -166,10 +176,33 @@
         const database = getDatabase(app);
 
         let userId = null;
+        let processingClick = false;
+        let activeTouches = 0;
 
         function getParameterByName(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
+        }
+
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
         }
 
         function updateLocalEnergy() {
@@ -177,11 +210,9 @@
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
             
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
-                console.log('Energy:', energy); // Отладочная информация
                 if (energy !== null) {
                     document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
                     setCookie('energy', energy, 1); // сохраняем в куки на 1 день
@@ -192,101 +223,92 @@
 
             onValue(userMaxEnergyRef, (snapshot) => {
                 const maxEnergy = snapshot.val();
-                console.log('Max Energy:', maxEnergy); // Отладочная информация
                 if (maxEnergy !== null) {
                     setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
                 }
             }, (error) => {
                 console.error('Error reading maxEnergy:', error);
             });
-
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                console.log('Total Clicks:', totalClicks); // Отладочная информация
-                if (totalClicks !== null) {
-                    document.getElementById('counter').innerText = totalClicks; // Отображаем totalClicks
-                }
-            }, (error) => {
-                console.error('Error reading totalClicks:', error);
-            });
         }
 
-        async function incrementCounter(event) {
-            if (!userId) return;
+        async function processClick(event) {
+            if (!userId || processingClick) return;
+
+            processingClick = true;
 
             try {
                 const userEnergyRef = ref(database, `users/${userId}/energy`);
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-                
-                const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                    get(userEnergyRef),
-                    get(userMaxEnergyRef)
-                ]);
-                
-                const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 0;
+                const snapshot = await get(userEnergyRef);
+                const currentEnergy = snapshot.val() || 0;
 
-                if (energy <= 0) return; // Не позволяет кликать, если энергии нет
+                if (currentEnergy <= 0) {
+                    console.log("Недостаточно энергии");
+                    processingClick = false;
+                    return;
+                }
 
                 await runTransaction(userEnergyRef, (currentEnergy) => {
-                    if (currentEnergy === null) return 0;
-                    return Math.min(currentEnergy - 1, maxEnergy);
+                    if (currentEnergy > 0) {
+                        return currentEnergy - 1;
+                    } else {
+                        return currentEnergy;
+                    }
                 });
 
-                await runTransaction(userTotalClicksRef, (currentTotalClicks) => {
-                    return (currentTotalClicks || 0) + 1;
-                });
+                const counterElement = document.getElementById("counter");
+                const energyCounterElement = document.getElementById("energy-counter");
 
-                updateLocalEnergy();
-                
-                // Добавление плавующего текста
-                const floatText = document.createElement('div');
-                floatText.className = 'floating-text';
-                floatText.innerText = '+1 Click';
-                document.body.appendChild(floatText);
-                
-                const { x, y } = event;
-                floatText.style.left = `${x}px`;
-                floatText.style.top = `${y}px`;
+                // Обновляем количество кликов
+                counterElement.innerText = parseInt(counterElement.innerText) + 1;
+
+                // Показываем плавающий текст
+                const floatingText = document.createElement("div");
+                floatingText.className = "floating-text";
+                floatingText.style.left = `${event.clientX}px`;
+                floatingText.style.top = `${event.clientY}px`;
+                floatingText.innerText = "+1";
+
+                document.body.appendChild(floatingText);
 
                 setTimeout(() => {
-                    document.body.removeChild(floatText);
+                    floatingText.remove();
                 }, 1000);
+
             } catch (error) {
-                console.error('Error incrementing counter:', error);
+                console.error('Ошибка при обработке клика:', error);
+            } finally {
+                processingClick = false;
             }
         }
 
-        function setCookie(name, value, days) {
-            const d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            let expires = "expires=" + d.toUTCString();
-            document.cookie = name + "=" + (value || "") + ";" + expires + ";path=/";
+        function handleTouch(touch) {
+            console.log('Касание с ID: ' + touch.identifier);
+            processClick(touch);
         }
 
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        document.addEventListener('touchstart', function(event) {
+            activeTouches = event.touches.length;
+
+            for (let i = 0; i < event.touches.length; i++) {
+                handleTouch(event.touches[i]);
             }
-            return null;
-        }
+        }, false);
 
-        function init() {
-            userId = getParameterByName('userId');
-            if (!userId) {
-                alert('User ID is required');
-                return;
+        document.addEventListener('touchend', function(event) {
+            activeTouches = event.touches.length;
+        }, false);
+
+        function checkCookieForUserId() {
+            const cookieUserId = getCookie('userId');
+            if (cookieUserId) {
+                userId = cookieUserId;
+                updateLocalEnergy();
+            } else {
+                window.location.href = "https://danyastars.github.io/rpm-site/register.html";
             }
-            updateLocalEnergy();
         }
 
-        document.addEventListener('DOMContentLoaded', init);
-        document.getElementById('button').addEventListener('click', incrementCounter);
+        checkCookieForUserId();
     </script>
 </body>
 </html>
