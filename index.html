@@ -46,6 +46,18 @@
             transform: scale(0.9); 
         }
 
+        .button.shake {
+            animation: shake 0.5s ease forwards;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
         .counter {
             font-size: 48px; 
             color: #333;
@@ -169,7 +181,10 @@
                 const currentEnergy = energySnapshot.val() || 0;
 
                 if (currentEnergy <= 0) {
-                    alert('No energy left!');
+                    document.getElementById('button').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('button').classList.remove('shake');
+                    }, 500);
                     return;
                 }
 
@@ -253,8 +268,19 @@
             document.getElementById('button').style.transform = 'rotateX(0deg) rotateY(0deg)';
         }
 
-        document.getElementById('button').addEventListener('mousemove', applyButtonTilt);
-        document.getElementById('button').addEventListener('mouseleave', resetButtonTilt);
+        function handleMouseDown(event) {
+            applyButtonTilt(event);
+            document.addEventListener('mousemove', applyButtonTilt);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseUp() {
+            resetButtonTilt();
+            document.removeEventListener('mousemove', applyButtonTilt);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        document.getElementById('button').addEventListener('mousedown', handleMouseDown);
         document.getElementById('button').addEventListener('click', incrementCounter);
 
         displayUserData();
