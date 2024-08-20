@@ -4,7 +4,7 @@
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-/* Общие стили для фона */
+/* Стили для мобильных устройств (по умолчанию) */
 body {
     display: flex;
     justify-content: center;
@@ -32,40 +32,88 @@ body {
     color: #fff; /* Цвет текста для контраста */
 }
 
-/* Скрыть элементы на ПК */
-@media only screen and (min-width: 769px) {
-    .container, .user-info, .button, .counter, .energy-counter {
-        display: none;
+.container {
+    display: block;
+    text-align: center;
+    position: relative;
+}
+
+.button {
+    width: 320px; 
+    height: 320px; 
+    background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+    background-size: cover; 
+    background-position: center; 
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: transform 0.1s ease, box-shadow 0.1s ease; 
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    position: relative;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.button:active {
+    transform: scale(0.9); 
+}
+
+.counter, .energy-counter {
+    font-size: 36px; 
+    color: #333;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+}
+
+.floating-text {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 28px;
+    font-weight: bold;
+    animation: floatUp 1s ease forwards;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease, color 0.3s ease; 
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px);
     }
 }
 
-/* Показать элементы только на мобильных устройствах */
-@media only screen and (max-width: 768px) {
-    .container {
-        display: block;
-        text-align: center;
-        position: relative;
-    }
+.user-info {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    color: #333;
+}
 
-    .button {
-        width: 320px; 
-        height: 320px; 
-        top: 100px;
-        position: relative;
-    }
+.rounded-image {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    object-fit: cover;
+}
 
-    .counter, .energy-counter {
-        font-size: 36px; 
-        position: absolute;
-        bottom: 300px;
-    }
-
-    .button:active {
-        transform: scale(0.9); 
-    }
-
-    .user-info {
-        display: block; /* Убедитесь, что этот элемент виден на мобильных устройствах */
+/* Скрыть элементы на больших экранах (ПК) */
+@media only screen and (min-width: 769px) {
+    .container, .user-info, .button, .counter, .energy-counter {
+        display: none;
     }
 }
 
