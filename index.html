@@ -88,7 +88,6 @@
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
-            white-space: nowrap;
         }
 
         @keyframes floatUp {
@@ -98,7 +97,7 @@
             }
             100% {
                 opacity: 0;
-                transform: translateY(-50px);
+                transform: translateY(-100px);
             }
         }
 
@@ -111,7 +110,7 @@
                 position: relative;
             }
             
-            .counter {
+            .counter{
                 font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
@@ -119,13 +118,13 @@
             }
             
             .energy-counter {
-                font-size: 48px; 
-                color: #f0b924;
-                font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-                font-family: 'Nunito';
-                top: 30px;
-            }
+               font-size: 48px; 
+               color: #f0b924;
+               font-weight: bold;
+               text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+               font-family: 'Nunito';
+               top: 30px;
+           }
         }
     </style>
 </head>
@@ -230,17 +229,12 @@
 
                     updateLocalEnergy();
 
-                    const button = document.querySelector('.button');
-                    const rect = button.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
                     const floatingText = document.createElement('div');
                     floatingText.className = 'floating-text';
                     floatingText.innerText = '+1';
-                    floatingText.style.left = `${x}px`;
-                    floatingText.style.top = `${y}px`;
-                    document.querySelector('.container').appendChild(floatingText);
+                    floatingText.style.left = `${e.clientX}px`; // Позиционирование по X
+                    floatingText.style.top = `${e.clientY}px`; // Позиционирование по Y
+                    document.body.appendChild(floatingText);
                     setTimeout(() => floatingText.remove(), 1000);
                 }
             } catch (error) {
@@ -249,45 +243,40 @@
         }
 
         function startEnergyRegeneration() {
-            if (!userId) return;
-
             setInterval(async () => {
+                if (!userId) return;
+
                 try {
                     const userEnergyRef = ref(database, `users/${userId}/energy`);
                     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-                    const [energySnapshot, maxEnergySnapshot] = await Promise.all([
-                        get(userEnergyRef),
-                        get(userMaxEnergyRef)
-                    ]);
+                    const energySnapshot = await get(userEnergyRef);
+                    const maxEnergySnapshot = await get(userMaxEnergyRef);
 
-                    const energy = energySnapshot.val() || 0;
-                    const maxEnergy = maxEnergySnapshot.val() || 0;
+                    const energy = energySnapshot.val();
+                    const maxEnergy = maxEnergySnapshot.val();
 
-                    if (energy < maxEnergy) {
-                        await set(userEnergyRef, energy + 1);
-                        updateLocalEnergy();
+                    if (energy !== null && maxEnergy !== null) {
+                        if (energy < maxEnergy) {
+                            await set(userEnergyRef, Math.min(energy + 1, maxEnergy));
+                        }
                     }
                 } catch (error) {
                     console.error('Error updating energy:', error);
                 }
-            }, 3000); // обновление энергии каждые 2 секунды
+            }, 2000); // Регистрация энергии каждые 2 секунды
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            userId = getParameterByName('source') || getCookie('userId');
-            if (!userId) {
-                alert('User ID not found.');
-                return;
+        window.onload = () => {
+            userId = getParameterByName('userId') || getCookie('userId');
+            
+            if (userId) {
+                updateLocalEnergy();
+                startEnergyRegeneration();
             }
 
-            console.log('User ID:', userId); // Добавьте отладочный вывод
-
-            updateLocalEnergy();
-            startEnergyRegeneration();
-
             document.getElementById('button').addEventListener('click', incrementCounter);
-        });
+        };
     </script>
 </body>
 </html>
