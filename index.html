@@ -6,6 +6,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
         /* Общие стили для всех устройств */
+
+        /* Стили только для мобильных устройств */
+        @media only screen and (max-width: 768px) {
+        /* Общие стили для всех устройств */
         body {
             display: flex;
             justify-content: center;
@@ -118,22 +122,6 @@
             border-radius: 50%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             object-fit: cover;
-        }
-
-        /* Стили только для мобильных устройств */
-        @media only screen and (max-width: 768px) {
-            .button {
-                width: 0px; 
-                height: 0px; 
-                top: 100px;
-                position: relative;
-            }
-            
-            .counter, .energy-counter {
-                font-size: 0px; 
-                position: absolute;
-                bottom: 0px;
-            }
         }
         
     </style>
