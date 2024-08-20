@@ -123,7 +123,7 @@
 <img src="https://i.imgur.com/TK8hVby.png" alt="Rounded Image" class="rounded-image">
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { getDatabase, ref, onValue, runTransaction, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -216,25 +216,20 @@
 
         const userEnergyRef = ref(database, `users/${userId}/Energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/MaxEnergy`);
-        const lastActiveRef = ref(database, `users/${userId}/lastActive`);
 
-        onValue(userMaxEnergyRef, async (snapshot) => {
-            const maxEnergy = snapshot.val();
-            const currentTime = Date.now();
-            const lastActiveSnapshot = await get(lastActiveRef);
-            const lastActiveTime = lastActiveSnapshot.val() || currentTime;
+        const lastVisit = localStorage.getItem(`lastVisit_${userId}`);
+        const currentTime = Date.now();
 
-            // Вычисляем количество времени, прошедшего с последнего посещения
-            const timeElapsed = Math.floor((currentTime - lastActiveTime) / 2000);
-            const energyToRegenerate = Math.min(maxEnergy, timeElapsed);
+        const energyToRegenerate = Math.floor((currentTime - (lastVisit || currentTime)) / 2000);
 
-            await runTransaction(userEnergyRef, (currentValue) => {
-                return Math.min(maxEnergy, (currentValue || 0) + energyToRegenerate);
-            });
+        const maxEnergySnapshot = await get(userMaxEnergyRef);
+        const maxEnergy = maxEnergySnapshot.val();
 
-            // Обновляем время последнего посещения
-            await set(lastActiveRef, currentTime);
+        await runTransaction(userEnergyRef, (currentValue) => {
+            return Math.min(maxEnergy, (currentValue || 0) + energyToRegenerate);
         });
+
+        localStorage.setItem(`lastVisit_${userId}`, currentTime);
     }
 
     function displayUserData() {
@@ -252,7 +247,7 @@
                 }
             });
         } else {
-            document.getElementById('user-info').innerText = 'No user ID provided.';
+            document.getElementById('user-info').innerText = 'No User ID provided.';
         }
     }
 
