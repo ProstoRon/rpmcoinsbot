@@ -208,7 +208,7 @@
                 ]);
                 
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 100; // устанавливаем 100 по умолчанию, если maxEnergy не найден
+                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
                 
                 if (energy <= 0) return;
 
