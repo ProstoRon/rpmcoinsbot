@@ -4,7 +4,7 @@
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        /* Стили для мобильных устройств (по умолчанию) */
+        /* Стили для мобильных устройств */
         body {
             display: flex;
             justify-content: center;
@@ -39,8 +39,8 @@
         }
 
         .button {
-            width: 320px; 
-            height: 320px; 
+            width: 500px; 
+            height: 500px; 
             background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
             background-size: cover; 
             background-position: center; 
@@ -63,7 +63,7 @@
         }
 
         .counter, .energy-counter {
-            font-size: 36px; 
+            font-size: 48px; 
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
@@ -110,10 +110,21 @@
             object-fit: cover;
         }
 
-        /* Скрыть элементы на больших экранах (ПК) */
-        @media only screen and (min-width: 769px) {
-            .container, .user-info, .button, .counter, .energy-counter {
-                display: none;
+        @media only screen and (max-width: 768px) {
+            .button {
+                width: 320px; 
+                height: 320px; 
+                top: 100px;
+                position: relative;
+            }
+            
+            .counter, .energy-counter {
+                font-size: 36px; 
+                position: absolute;
+                bottom: 300px;
+            }
+            .button:active {
+                transform: scale(0.9); 
             }
         }
     </style>
@@ -219,7 +230,7 @@
 
                 await runTransaction(userEnergyRef, (currentEnergy) => {
                     if ((currentEnergy || 0) > 0) {
-                        return Math.max((currentEnergy || 0) - 1, 0);
+                        return (currentEnergy || 0) - 1; 
                     }
                     return currentEnergy;
                 });
@@ -228,36 +239,39 @@
                     return (currentClicks || 0) + 1;
                 });
 
-                updateLocalEnergy();
+                const counter = document.getElementById('counter');
+                counter.innerText = parseInt(counter.innerText) + 1;
+
+                const newFloatText = document.createElement('div');
+                newFloatText.className = 'floating-text';
+                newFloatText.innerText = "+1";
+                document.body.appendChild(newFloatText);
+
+                setTimeout(() => {
+                    newFloatText.remove();
+                }, 1000);
+
             } catch (error) {
                 console.error('Error incrementing counter:', error);
             }
         }
 
-        window.onload = function() {
-            userId = getParameterByName('userId');
+        window.addEventListener('load', () => {
+            userId = getParameterByName('source');
+
             if (userId) {
-                setCookie('userId', userId, 1);
+                const userInfo = document.getElementById('user-info');
+                userInfo.innerText = `User ID: ${userId}`;
+
                 updateLocalEnergy();
 
-                document.getElementById('button').addEventListener('click', incrementCounter);
-
-                const counterElement = document.getElementById('counter');
-                const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-                onValue(userTotalClicksRef, (snapshot) => {
-                    const totalClicks = snapshot.val() || 0;
-                    counterElement.innerText = totalClicks;
-                }, (error) => {
-                    console.error('Error reading totalClicks:', error);
-                });
+                const button = document.getElementById('button');
+                button.addEventListener('click', incrementCounter);
             } else {
-                userId = getCookie('userId');
-                if (userId) {
-                    updateLocalEnergy();
-                }
+                console.log('User ID is missing.');
             }
-        };
+        });
+
     </script>
 </body>
 </html>
