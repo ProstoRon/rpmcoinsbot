@@ -101,25 +101,6 @@
             }
         }
 
-        .user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .rounded-image {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            object-fit: cover;
-        }
-
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
@@ -145,7 +126,6 @@
                top: 30px;
            }
         }
-        
     </style>
 </head>
 <body>
@@ -154,7 +134,6 @@
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
     </div>
-    <div class="user-info" id="user-info"></div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
@@ -300,12 +279,6 @@
             startEnergyRegeneration();
 
             document.getElementById('button').addEventListener('click', incrementCounter);
-
-            // Set user info if userId is available
-            if (userId) {
-                const userInfoElement = document.getElementById('user-info');
-                userInfoElement.innerHTML = '" class="rounded-image" alt="User Avatar"><br>User: ${userId}`;
-            }
         });
     </script>
 </body>
