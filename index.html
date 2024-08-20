@@ -181,6 +181,7 @@
             
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
+                console.log('Energy:', energy); // Отладочная информация
                 if (energy !== null) {
                     document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
                     setCookie('energy', energy, 1); // сохраняем в куки на 1 день
@@ -191,6 +192,7 @@
 
             onValue(userMaxEnergyRef, (snapshot) => {
                 const maxEnergy = snapshot.val();
+                console.log('Max Energy:', maxEnergy); // Отладочная информация
                 if (maxEnergy !== null) {
                     setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
                 }
@@ -200,6 +202,7 @@
 
             onValue(userTotalClicksRef, (snapshot) => {
                 const totalClicks = snapshot.val();
+                console.log('Total Clicks:', totalClicks); // Отладочная информация
                 if (totalClicks !== null) {
                     document.getElementById('counter').innerText = totalClicks; // Отображаем totalClicks
                 }
@@ -222,38 +225,33 @@
                 ]);
                 
                 const energy = energySnapshot.val() || 0;
-                const maxEnergy = maxEnergySnapshot.val() || 1000; // Устанавливаем 1000 по умолчанию, если maxEnergy не найден
-                
-                if (energy <= 0) return;
+                const maxEnergy = maxEnergySnapshot.val() || 0;
+
+                if (energy <= 0) return; // Не позволяет кликать, если энергии нет
 
                 await runTransaction(userEnergyRef, (currentEnergy) => {
-                    if ((currentEnergy || 0) > 0) {
-                        return (currentEnergy || 0) - 1; 
-                    }
-                    return currentEnergy;
+                    if (currentEnergy === null) return 0;
+                    return Math.min(currentEnergy - 1, maxEnergy);
                 });
 
-                const totalClicks = await runTransaction(userTotalClicksRef, (currentClicks) => {
-                    const newClicks = (currentClicks || 0) + 1;
-                    return newClicks;
+                await runTransaction(userTotalClicksRef, (currentTotalClicks) => {
+                    return (currentTotalClicks || 0) + 1;
                 });
 
-                document.getElementById('counter').innerText = totalClicks; // Обновляем отображение totalClicks
-
-                const button = document.getElementById('button');
-                const rect = button.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-
-                const newFloatText = document.createElement('div');
-                newFloatText.className = 'floating-text';
-                newFloatText.innerText = "+1";
-                newFloatText.style.left = `${x}px`;
-                newFloatText.style.top = `${y}px`;
-                document.body.appendChild(newFloatText);
+                updateLocalEnergy();
+                
+                // Добавление плавующего текста
+                const floatText = document.createElement('div');
+                floatText.className = 'floating-text';
+                floatText.innerText = '+1 Click';
+                document.body.appendChild(floatText);
+                
+                const { x, y } = event;
+                floatText.style.left = `${x}px`;
+                floatText.style.top = `${y}px`;
 
                 setTimeout(() => {
-                    document.body.removeChild(newFloatText);
+                    document.body.removeChild(floatText);
                 }, 1000);
             } catch (error) {
                 console.error('Error incrementing counter:', error);
