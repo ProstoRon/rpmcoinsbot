@@ -12,7 +12,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #910179
+            background: #910179;
         }
 
         .styled-rectangle {
@@ -151,158 +151,153 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">0</div>
-        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
+        <div class="styled-rectangle"></div>
     </div>
 
-    <!-- Подключаем Firebase -->
     <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-    authDomain: "rpmcoins-48e4f.firebaseapp.com",
-    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-    projectId: "rpmcoins-48e4f",
-    storageBucket: "rpmcoins-48e4f.appspot.com",
-    messagingSenderId: "764805793058",
-    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-    measurementId: "G-S2PRPR80F5"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+            authDomain: "rpmcoins-48e4f.firebaseapp.com",
+            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+            projectId: "rpmcoins-48e4f",
+            storageBucket: "rpmcoins-48e4f.appspot.com",
+            messagingSenderId: "764805793058",
+            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+            measurementId: "G-S2PRPR80F5"
+        };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-let userId = null;
-
-function getParameterByName(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-}
-
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
-}
-
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
-function updateLocalEnergy() {
-    if (!userId) return;
-
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
-
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = ${energy};
-    });
-
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
-    });
-
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
-    });
-}
-
-window.onload = function() {
-    userId = getParameterByName('userId');
-    if (!userId) {
-        userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
+        // Регистрация Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then((registration) => {
+                    console.log('Service Worker зарегистрирован с областью:', registration.scope);
+                })
+                .catch((error) => {
+                    console.error('Ошибка регистрации Service Worker:', error);
+                });
         }
-    }
-    updateLocalEnergy();
-};
 
-function createFloatingText(x, y, text) {
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
-    floatingText.innerText = text;
-    document.body.appendChild(floatingText);
+        let userId = null;
 
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-function handleClick(event) {
-    if (!userId) return;
-
-    const x = event.clientX;
-    const y = event.clientY;
-
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            set(userEnergyRef, newEnergy);
-            createFloatingText(x, y, '+1');
-
-            const userClicksRef = ref(database, users/${userId}/totalClicks);
-            get(userClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                set(userClicksRef, totalClicks + 1);
-            });
-        } else {
-            createFloatingText(x, y, 'No Energy');
+        function getParameterByName(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
         }
-    });
-}
 
-document.getElementById('button').addEventListener('click', handleClick);
-
-setInterval(() => {
-    if (!userId) return;
-    
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-
-    get(userEnergyRef).then((snapshot) => {
-        let energy = snapshot.val();
-        get(userMaxEnergyRef).then((maxSnapshot) => {
-            const maxEnergy = maxSnapshot.val();
-            if (energy < maxEnergy) {
-                set(userEnergyRef, energy + 1);
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
             }
-        });
-    });
-}, 2000);
-        
-document.addEventListener('DOMContentLoaded', () => {
-    const button = document.querySelector('.button');
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
 
-    button.addEventListener('click', () => {
-        button.classList.add('animated');
-        setTimeout(() => {
-            button.classList.remove('animated');
-        }, 300); // Длительность анимации
-    });
-});
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function updateLocalEnergy() {
+            if (!userId) return;
+
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+            onValue(userEnergyRef, (snapshot) => {
+                const energy = snapshot.val();
+                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+            });
+
+            onValue(userMaxEnergyRef, (snapshot) => {
+                const maxEnergy = snapshot.val();
+                document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
+            });
+
+            onValue(userTotalClicksRef, (snapshot) => {
+                const totalClicks = snapshot.val() || 0;
+                document.getElementById('counter').innerText = totalClicks;
+            });
+        }
+
+        window.onload = function() {
+            userId = getParameterByName('userId');
+            if (!userId) {
+                userId = getCookie('userId');
+                if (!userId) {
+                    userId = prompt('Enter your user ID:');
+                    setCookie('userId', userId, 7);
+                }
+            }
+            updateLocalEnergy();
+        };
+
+        function createFloatingText(x, y, text) {
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+            floatingText.innerText = text;
+            document.body.appendChild(floatingText);
+
+            setTimeout(() => {
+                floatingText.remove();
+            }, 1000);
+        }
+
+        function handleClick(event) {
+            if (!userId) return;
+
+            const x = event.clientX;
+            const y = event.clientY;
+
+            // Отправка сообщения в Service Worker
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'HANDLE_CLICK',
+                    x,
+                    y,
+                    userId
+                });
+            }
+
+            // Локальная обработка кликов
+            const energyRef = ref(database, `users/${userId}/energy`);
+            get(energyRef).then((snapshot) => {
+                const energy = snapshot.val() || 0;
+                if (energy > 0) {
+                    // Обновление кликов
+                    const totalClicksRef = ref(database, `users/${userId}/totalClicks`);
+                    get(totalClicksRef).then((snapshot) => {
+                        const totalClicks = (snapshot.val() || 0) + 1;
+                        set(totalClicksRef, totalClicks);
+                        createFloatingText(x, y, '+1 Click');
+                        updateLocalEnergy(); // Обновление отображения энергии и кликов
+                    });
+
+                    // Уменьшение энергии
+                    set(energyRef, energy - 1);
+                } else {
+                    alert('Not enough energy!');
+                }
+            });
+        }
+
+        document.getElementById('button').addEventListener('click', handleClick);
     </script>
 </body>
 </html>
