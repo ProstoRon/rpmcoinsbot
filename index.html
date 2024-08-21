@@ -46,7 +46,6 @@
             display: block;
             text-align: center;
             position: relative;
-            perspective: 1000px; /* Добавляем перспективу для 3D-эффекта */
         }
 
         .button {
@@ -63,7 +62,8 @@
             margin-bottom: 20px;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.3s ease; /* Плавная анимация */
+            perspective: 1000px;
+            transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -76,7 +76,7 @@
                 transform: rotateY(0deg);
             }
             50% {
-                transform: rotateY(-15deg); /* Наклон влево */
+                transform: rotateY(-10deg); /* Наклон влево */
             }
             100% {
                 transform: rotateY(0deg); /* Возвращение в исходное состояние */
@@ -162,7 +162,6 @@
             .button:active {
                transform: scale(0.9);
             }
-
         }
     </style>
 </head>
@@ -235,32 +234,38 @@
 
         onValue(userMaxEnergyRef, (snapshot) => {
             const maxEnergy = snapshot.val();
-            document.getElementById('energy-counter').innerText = `Energy: ${Math.min(maxEnergy, document.getElementById('energy-counter').innerText.split(' ')[1])}`;
+            document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
         });
 
         onValue(userTotalClicksRef, (snapshot) => {
             const totalClicks = snapshot.val() || 0;
             document.getElementById('counter').innerText = totalClicks;
-        }, (error) => {
-            console.error('Error reading total clicks:', error);
         });
     }
+
+    window.onload = function() {
+        userId = getParameterByName('userId');
+        if (!userId) {
+            userId = getCookie('userId');
+            if (!userId) {
+                userId = prompt('Enter your user ID:');
+                setCookie('userId', userId, 7);
+            }
+        }
+        updateLocalEnergy();
+    };
 
     function createFloatingText(x, y, text) {
         const floatingText = document.createElement('div');
         floatingText.className = 'floating-text';
+        floatingText.style.left = `${x}px`;
+        floatingText.style.top = `${y}px`;
         floatingText.innerText = text;
-
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-        floatingText.style.left = `${x + scrollX}px`;
-        floatingText.style.top = `${y + scrollY}px`;
-
         document.body.appendChild(floatingText);
+
         setTimeout(() => {
-            document.body.removeChild(floatingText);
-        }, 1000); // Удаление через 1 секунду
+            floatingText.remove();
+        }, 1000);
     }
 
     function handleClick(event) {
@@ -268,9 +273,28 @@
 
         const x = event.clientX;
         const y = event.clientY;
-
         const button = document.getElementById('button');
+
+        // Определение размеров кнопки и её центра
+        const rect = button.getBoundingClientRect();
+        const buttonCenterX = rect.left + rect.width / 2;
+        const buttonCenterY = rect.top + rect.height / 2;
+
+        // Вычисление угла наклона
+        const deltaX = x - buttonCenterX;
+        const deltaY = y - buttonCenterY;
+        const tiltX = deltaX / 20; // Измените 20 для регулировки интенсивности наклона
+        const tiltY = -deltaY / 20; // Измените 20 для регулировки интенсивности наклона
+
+        button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
+
+        // Применение анимации и сброс трансформации после завершения анимации
         button.classList.add('animated');
+        setTimeout(() => {
+            button.classList.remove('animated');
+            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        }, 300); // Убедитесь, что это значение соответствует времени анимации
+
         setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
@@ -294,18 +318,6 @@
     }
 
     document.getElementById('button').addEventListener('click', handleClick);
-
-    // Инициализация
-    userId = getParameterByName('userId');
-    if (userId) {
-        setCookie('userId', userId, 1);
-    } else {
-        userId = getCookie('userId');
-    }
-
-    if (userId) {
-        updateLocalEnergy();
-    }
     </script>
 </body>
 </html>
