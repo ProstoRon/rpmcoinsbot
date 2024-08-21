@@ -12,7 +12,24 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #910179;
+            background: linear-gradient(
+                45deg,
+                #000 0%,
+                #000 20%,
+                #a41a7e 20%,
+                #a41a7e 40%,
+                #910179 40%,
+                #910179 60%,
+                #a41a7e 60%,
+                #a41a7e 80%,
+                #000 80%,
+                #000 100%
+            );
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            backdrop-filter: blur(30px);
+            color: #fff;
         }
 
         .styled-rectangle {
@@ -110,11 +127,10 @@
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 410px; 
-                height: 410px; 
-                top: 0;
+                width: 400px; 
+                height: 400px; 
+                top: 190px;
                 position: relative;
-                bottom: 0;
             }
             
             .counter {
@@ -131,8 +147,7 @@
                 font-weight: bold;
                 text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
                 font-family: 'Nunito';
-                top: 10px;
-                left: -110px;
+                bottom: -20px;
             }
             
             .styled-rectangle {
@@ -143,6 +158,10 @@
                 left: -2px; /* Расположите элемент по левому краю */
                 margin: 0; /* Удалите все отступы */
             }
+            
+            .button:active {
+               transform: scale(0.9);
+            }
         }
     </style>
 </head>
@@ -150,128 +169,113 @@
     <div class="container">
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">0</div>
-        <div class="styled-rectangle"></div>
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
+    <!-- Подключаем Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+        authDomain: "rpmcoins-48e4f.firebaseapp.com",
+        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+        projectId: "rpmcoins-48e4f",
+        storageBucket: "rpmcoins-48e4f.appspot.com",
+        messagingSenderId: "764805793058",
+        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+        measurementId: "G-S2PRPR80F5"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then((registration) => {
-                    console.log('Service Worker зарегистрирован с областью:', registration.scope);
-                })
-                .catch((error) => {
-                    console.error('Ошибка регистрации Service Worker:', error);
-                });
+    let userId = null;
+
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
         }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
 
-        let userId = null;
-
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
         }
+        return null;
+    }
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
+    function updateLocalEnergy() {
+        if (!userId) return;
+
+        const energy = parseInt(getCookie('energy') || '0');
+        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+        document.getElementById('counter').innerText = getCookie('totalClicks') || '0';
+    }
+
+    function updateFirebaseEnergy() {
+        if (!userId) return;
+
+        const energy = parseInt(getCookie('energy') || '0');
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        set(userEnergyRef, energy);
+    }
+
+    function startEnergyRegeneration() {
+        setInterval(() => {
+            let energy = parseInt(getCookie('energy') || '0');
+            if (energy < 100) { // Предположим, MaxEnergy = 100
+                energy += 1;
+                setCookie('energy', energy, 1); // Обновление куки с новой энергией
+                updateLocalEnergy();
+                updateFirebaseEnergy(); // Запись новой энергии в Firebase
             }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
+        }, 2500); // 2.5 секунды
+    }
 
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
+    function handleClick() {
+        let clicks = parseInt(getCookie('totalClicks') || '0');
+        clicks += 1;
+        setCookie('totalClicks', clicks, 1); // Обновление куки с новыми кликами
+        updateLocalEnergy();
+    }
 
-        function updateLocalEnergy() {
-            if (!userId) return;
+    document.getElementById('button').addEventListener('click', () => {
+        document.getElementById('button').classList.add('animated');
+        setTimeout(() => {
+            document.getElementById('button').classList.remove('animated');
+        }, 300);
+        handleClick();
+    });
 
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-            });
-
-            onValue(userMaxEnergyRef, (snapshot) => {
-                const maxEnergy = snapshot.val();
-                if (maxEnergy !== undefined) {
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy} / ${maxEnergy}`;
-                }
-            });
-        }
-
-        document.getElementById('button').addEventListener('click', () => {
-            if (!userId) return;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-            get(userEnergyRef).then((snapshot) => {
-                let currentEnergy = snapshot.val() || 0;
-                
-                if (currentEnergy > 0) {
-                    currentEnergy--;
-                    set(userEnergyRef, currentEnergy);
-
-                    // Update the displayed energy
-                    document.getElementById('energy-counter').innerText = `Energy: ${currentEnergy}`;
-
-                    // Fetch maxEnergy to ensure energy does not exceed max
-                    get(userMaxEnergyRef).then((snapshot) => {
-                        const maxEnergy = snapshot.val();
-                        if (currentEnergy > maxEnergy) {
-                            set(userEnergyRef, maxEnergy);
-                        }
-                    });
-                }
-            });
+    // Получение userId из URL
+    userId = getParameterByName('userid');
+    if (userId) {
+        // Инициализация энергии из Firebase
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        onValue(userEnergyRef, (snapshot) => {
+            const energy = snapshot.val() || 0;
+            setCookie('energy', energy, 1);
+            updateLocalEnergy();
         });
 
-        function init() {
-            userId = getParameterByName('userId');
-            if (userId) {
-                setCookie('userId', userId, 1);
-                updateLocalEnergy();
-            } else {
-                userId = getCookie('userId');
-                if (userId) {
-                    updateLocalEnergy();
-                } else {
-                    console.log('User ID not found');
-                }
-            }
-        }
-
-        init();
+        startEnergyRegeneration();
+    }
     </script>
 </body>
 </html>
