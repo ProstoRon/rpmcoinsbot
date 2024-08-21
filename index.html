@@ -12,8 +12,18 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #f72af7
-                
+            background: linear-gradient(
+                45deg,
+                #000 0%,
+                #000 20%,
+                #a41a7e 20%,
+                #a41a7e 40%,
+                #910179 40%,
+                #910179 60%,
+                #a41a7e 60%,
+                #a41a7e 80%,
+                #000 80%,
+                #000 100%
             );
             background-size: cover;
             font-family: Arial, sans-serif;
@@ -102,10 +112,10 @@
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 320px; 
-                height: 320px; 
+                width: 300px; 
+                height: 300px; 
                 top: 100px;
-                position: absolute;
+                position: relative;
             }
             
             .counter {
