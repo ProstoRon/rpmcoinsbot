@@ -6,122 +6,136 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
         /* Общие стили для всех устройств */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(
-                45deg,
-                #000 0%,
-                #000 20%,
-                #a41a7e 20%,
-                #a41a7e 40%,
-                #910179 40%,
-                #910179 60%,
-                #a41a7e 60%,
-                #a41a7e 80%,
-                #000 80%,
-                #000 100%
-            );
-            background-size: cover;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            backdrop-filter: blur(30px);
-            color: #fff;
-        }
+        /* Общие стили для всех устройств */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(
+        45deg,
+        #000 0%,
+        #000 20%,
+        #a41a7e 20%,
+        #a41a7e 40%,
+        #910179 40%,
+        #910179 60%,
+        #a41a7e 60%,
+        #a41a7e 80%,
+        #000 80%,
+        #000 100%
+    );
+    background-size: cover;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    backdrop-filter: blur(30px);
+    color: #fff;
+}
 
-        .container {
-            display: block;
-            text-align: center;
-            position: relative;
-        }
+.styled-rectangle {
+    width: 90%;
+    height: 100px;
+    background-color: #1b1b1b; /* Темный фон */
+    border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
+    border-radius: 20px; /* Округленные углы */
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.6), 0 0 10px rgba(138, 43, 226, 0.4), 0 0 15px rgba(138, 43, 226, 0.2); /* Прозрачное свечение */
+    margin: 20px auto; /* Центрирование */
+}
 
-        .button {
-            width: 400px; 
-            height: 400px; 
-            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
-            background-size: cover; 
-            background-position: center; 
-            border: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.2s ease; /* Плавная анимация */
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-        }
+.container {
+    display: block;
+    text-align: center;
+    position: relative;
+}
 
-        .energy-counter {
-            font-size: 48px; 
-            color: #f0b924;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-            font-family: 'Nunito';
-            top: 30px;
-        }
+.button {
+    width: 400px; 
+    height: 400px; 
+    background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
+    background-size: cover; 
+    background-position: center; 
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease; /* Плавная анимация */
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    position: relative;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
 
-        .counter {
-            font-size: 48px; 
-            color: #333;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-            top: 40px;
-        }
+.energy-counter {
+    font-size: 48px; 
+    color: #f0b924;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+    font-family: 'Nunito';
+    position: relative;
+    top: 30px;
+}
 
-        .floating-text {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
-            font-weight: bold;
-            animation: floatUp 1s ease forwards;
-            pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease; 
-        }
+.counter {
+    font-size: 48px; 
+    color: #333;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+    position: relative;
+    top: 40px;
+}
 
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px);
-            }
-        }
+.floating-text {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 28px;
+    font-weight: bold;
+    animation: floatUp 1s ease forwards;
+    pointer-events: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease, color 0.3s ease; 
+}
 
-        /* Стили только для мобильных устройств */
-        @media only screen and (max-width: 768px) {
-            .button {
-                width: 400px; 
-                height: 400px; 
-                top: 100px;
-                position: relative;
-            }
-            
-            .counter {
-                font-size: 36px; 
-                position: absolute;
-                bottom: 0px;
-                top: 50px;
-            }
-            
-            .energy-counter {
-                font-size: 48px; 
-                color: #f0b924;
-                font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-                font-family: 'Nunito';
-                top: 30px;
-            }
-        }
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+}
+
+/* Стили только для мобильных устройств */
+@media only screen and (max-width: 768px) {
+    .button {
+        width: 400px; 
+        height: 400px; 
+        top: 100px;
+        position: relative;
+    }
+    
+    .counter {
+        font-size: 36px; 
+        position: absolute;
+        bottom: 0px;
+        top: 50px;
+    }
+    
+    .energy-counter {
+        font-size: 48px; 
+        color: #f0b924;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+        font-family: 'Nunito';
+        top: 30px;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -129,6 +143,7 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="styled-rectangle"></div>
     </div>
 
     <!-- Подключаем Firebase -->
