@@ -12,7 +12,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #910179;
+            background: #910179
         }
 
         .styled-rectangle {
@@ -111,7 +111,7 @@
         @media only screen and (max-width: 768px) {
             .button {
                 width: 410px; 
-                height: 410px;
+                height: 410px; 
                 top: 0;
                 position: relative;
                 bottom: 0;
@@ -157,7 +157,7 @@
     <!-- Подключаем Firebase -->
     <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+import { getDatabase, ref, onValue, get, set, update } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -211,7 +211,7 @@ function updateLocalEnergy() {
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `${energy}`;
+        document.getElementById('energy-counter').innerText = energy;
     });
 
     onValue(userMaxEnergyRef, (snapshot) => {
@@ -226,49 +226,110 @@ function updateLocalEnergy() {
 
     onValue(userLastUpdateRef, (snapshot) => {
         const lastUpdate = snapshot.val();
-        const now = Date.now();
-        const elapsedTime = now - lastUpdate;
+        if (lastUpdate) {
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - lastUpdate;
+            const energyRegenerationInterval = 2000; // 2 seconds
+            const energyRegenerationRate = 1;
 
-        const secondsElapsed = Math.floor(elapsedTime / 1000);
-        const energyToAdd = Math.floor(secondsElapsed / 2); // Восполнение энергии каждые 2 секунды
-
-        set(userEnergyRef, (energy || 0) + energyToAdd);
-        set(userLastUpdateRef, now);
+            const energyRef = ref(database, `users/${userId}/energy`);
+            get(energyRef).then((snapshot) => {
+                let energy = snapshot.val();
+                if (energy !== null) {
+                    const elapsedEnergy = Math.floor(elapsedTime / energyRegenerationInterval) * energyRegenerationRate;
+                    const updatedEnergy = Math.min(energy + elapsedEnergy, maxEnergy);
+                    if (updatedEnergy > energy) {
+                        set(energyRef, updatedEnergy);
+                    }
+                }
+            });
+        }
     });
 }
 
-function replenishEnergy() {
+window.onload = function() {
+    userId = getParameterByName('userId');
+    if (!userId) {
+        userId = getCookie('userId');
+        if (!userId) {
+            userId = prompt('Enter your user ID:');
+            setCookie('userId', userId, 7);
+        }
+    }
+    updateLocalEnergy();
+};
+
+function createFloatingText(x, y, text) {
+    const floatingText = document.createElement('div');
+    floatingText.className = 'floating-text';
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    floatingText.innerText = text;
+    document.body.appendChild(floatingText);
+
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000);
+}
+
+function handleClick(event) {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userLastUpdateRef = ref(database, `users/${userId}/lastUpdate`);
+    const x = event.clientX;
+    const y = event.clientY;
 
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
     get(userEnergyRef).then((snapshot) => {
         const energy = snapshot.val();
-        get(userMaxEnergyRef).then((snapshot) => {
-            const maxEnergy = snapshot.val();
+        if (energy > 0) {
+            const newEnergy = energy - 1;
+            set(userEnergyRef, newEnergy);
+            createFloatingText(x, y, '+1');
+
+            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            get(userClicksRef).then((snapshot) => {
+                const totalClicks = snapshot.val() || 0;
+                set(userClicksRef, totalClicks + 1);
+            });
+
+            // Update last update time
+            const now = new Date().getTime();
+            const userLastUpdateRef = ref(database, `users/${userId}/lastUpdate`);
+            set(userLastUpdateRef, now);
+        } else {
+            createFloatingText(x, y, 'No Energy');
+        }
+    });
+}
+
+document.getElementById('button').addEventListener('click', handleClick);
+
+setInterval(() => {
+    if (!userId) return;
+    
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+    get(userEnergyRef).then((snapshot) => {
+        let energy = snapshot.val();
+        get(userMaxEnergyRef).then((maxSnapshot) => {
+            const maxEnergy = maxSnapshot.val();
             if (energy < maxEnergy) {
-                set(userEnergyRef, Math.min(energy + 1, maxEnergy));
-                set(userLastUpdateRef, Date.now());
+                set(userEnergyRef, energy + 1);
             }
         });
     });
-}
+}, 2000);
+        
+document.addEventListener('DOMContentLoaded', () => {
+    const button = document.querySelector('.button');
 
-// Установка идентификатора пользователя и вызов функции для обновления и пополнения энергии
-window.onload = () => {
-    userId = getParameterByName('userId'); // Или другой способ установить userId
-
-    if (userId) {
-        updateLocalEnergy();
-    }
-};
-
-document.getElementById('button').addEventListener('click', () => {
-    if (!userId) return;
-
-    replenishEnergy();
+    button.addEventListener('click', () => {
+        button.classList.add('animated');
+        setTimeout(() => {
+            button.classList.remove('animated');
+        }, 300); // Длительность анимации
+    });
 });
     </script>
 </body>
