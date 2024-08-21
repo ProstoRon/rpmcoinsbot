@@ -210,8 +210,7 @@
         if (!userId) return;
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userClicksRef = ref(database, `users/${userId}/clicks`);
 
         onValue(userEnergyRef, (snapshot) => {
             const energy = snapshot.val();
@@ -223,23 +222,14 @@
             console.error('Error reading energy:', error);
         });
 
-        onValue(userMaxEnergyRef, (snapshot) => {
-            const maxEnergy = snapshot.val();
-            if (maxEnergy !== null) {
-                setCookie('maxEnergy', maxEnergy, 1);
-            }
-        }, (error) => {
-            console.error('Error reading maxEnergy:', error);
-        });
-
-        onValue(userTotalClicksRef, (snapshot) => {
+        onValue(userClicksRef, (snapshot) => {
             const clicks = snapshot.val();
             if (clicks !== null) {
                 document.getElementById('counter').innerText = clicks;
-                setCookie('totalClicks', clicks, 1);
+                setCookie('clicks', clicks, 1);
             }
         }, (error) => {
-            console.error('Error reading totalClicks:', error);
+            console.error('Error reading clicks:', error);
         });
     }
 
@@ -257,18 +247,18 @@
             if (!userId) return;
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
 
             try {
                 const energySnapshot = await get(userEnergyRef);
                 let energy = energySnapshot.val();
 
                 if (energy > 0) {
-                    const clicksSnapshot = await get(userTotalClicksRef);
+                    const clicksSnapshot = await get(userClicksRef);
                     let clicks = clicksSnapshot.val();
                     clicks += 1;
 
-                    await set(userTotalClicksRef, clicks);
+                    await set(userClicksRef, clicks);
                     await set(userEnergyRef, energy - 1);
 
                     document.getElementById('counter').innerText = clicks;
