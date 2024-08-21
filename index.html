@@ -94,8 +94,8 @@
             font-weight: bold;
             animation: floatUp 1s ease forwards;
             pointer-events: none;
-            display: none; /* Скрыть по умолчанию */
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease; 
         }
 
         @keyframes floatUp {
@@ -147,7 +147,6 @@
             .button:active {
                transform: scale(0.9);
             }
-
         }
     </style>
 </head>
@@ -156,14 +155,13 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
-        <div class="floating-text" id="floating-text"></div>
         <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get, set, update } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -243,39 +241,59 @@
         });
     }
 
-    function handleButtonClick() {
+    function createFloatingText(x, y, text) {
+        const floatingText = document.createElement('div');
+        floatingText.className = 'floating-text';
+        floatingText.innerText = text;
+        floatingText.style.left = `${x}px`;
+        floatingText.style.top = `${y}px`;
+        document.body.appendChild(floatingText);
+        setTimeout(() => {
+            document.body.removeChild(floatingText);
+        }, 1000); // Удаление через 1 секунду
+    }
+
+    function handleButtonClick(event) {
         if (!userId) return;
 
-        const userClicksRef = ref(database, `users/${userId}/clicks`);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userClickCountRef = ref(database, `users/${userId}/clicks`);
 
-        get(userClicksRef).then((snapshot) => {
-            const clicks = snapshot.val();
-            if (clicks !== null) {
-                const floatingTextElement = document.getElementById('floating-text');
-                floatingTextElement.innerText = clicks;
-                floatingTextElement.style.display = 'block'; // Показать текст
+        get(userEnergyRef).then((snapshot) => {
+            const currentEnergy = snapshot.val();
+            if (currentEnergy > 0) {
+                // Update clicks
+                get(userClicksRef).then((clicksSnapshot) => {
+                    const currentClicks = clicksSnapshot.val() || 0;
+                    set(userClicksRef, currentClicks + 1);
 
-                // Установите таймер для скрытия текста через 1 секунду (анимация)
-                setTimeout(() => {
-                    floatingTextElement.style.display = 'none';
-                }, 1000);
+                    // Decrease energy
+                    set(userEnergyRef, currentEnergy - 1);
+
+                    // Create and show floating text
+                    get(userClickCountRef).then((clicksSnapshot) => {
+                        const clicks = clicksSnapshot.val() || 0;
+                        const rect = event.target.getBoundingClientRect();
+                        const x = event.clientX - rect.left;
+                        const y = event.clientY - rect.top;
+                        createFloatingText(x, y, clicks);
+                    });
+                });
+            } else {
+                alert('Not enough energy!');
             }
-        }).catch((error) => {
-            console.error('Error reading clicks:', error);
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        userId = getParameterByName('userId');
-
+    window.addEventListener('DOMContentLoaded', () => {
+        userId = getCookie('userId') || getParameterByName('userId');
         if (userId) {
+            setCookie('userId', userId, 1);
             updateLocalEnergy();
-
-            const button = document.getElementById('button');
-            button.addEventListener('click', handleButtonClick);
-        } else {
-            alert('User ID not found in URL');
         }
+
+        document.getElementById('button').addEventListener('click', handleButtonClick);
     });
     </script>
 </body>
