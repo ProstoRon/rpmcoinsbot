@@ -12,7 +12,24 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #910179
+            background: linear-gradient(
+                45deg,
+                #000 0%,
+                #000 20%,
+                #a41a7e 20%,
+                #a41a7e 40%,
+                #910179 40%,
+                #910179 60%,
+                #a41a7e 60%,
+                #a41a7e 80%,
+                #000 80%,
+                #000 100%
+            );
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            backdrop-filter: blur(30px);
+            color: #fff;
         }
 
         .styled-rectangle {
@@ -110,11 +127,10 @@
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 410px; 
-                height: 410px; 
-                top: 0;
+                width: 400px; 
+                height: 400px; 
+                top: 190px;
                 position: relative;
-                bottom: 0;
             }
             
             .counter {
@@ -131,8 +147,7 @@
                 font-weight: bold;
                 text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
                 font-family: 'Nunito';
-                top: 10px;
-                left: -110px;
+                bottom: -20px;
             }
             
             .styled-rectangle {
@@ -143,6 +158,10 @@
                 left: -2px; /* Расположите элемент по левому краю */
                 margin: 0; /* Удалите все отступы */
             }
+            
+            .button:active {
+               transform: scale(0.9);
+            }
         }
     </style>
 </head>
@@ -150,159 +169,155 @@
     <div class="container">
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
         <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-    authDomain: "rpmcoins-48e4f.firebaseapp.com",
-    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-    projectId: "rpmcoins-48e4f",
-    storageBucket: "rpmcoins-48e4f.appspot.com",
-    messagingSenderId: "764805793058",
-    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-    measurementId: "G-S2PRPR80F5"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+        authDomain: "rpmcoins-48e4f.firebaseapp.com",
+        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+        projectId: "rpmcoins-48e4f",
+        storageBucket: "rpmcoins-48e4f.appspot.com",
+        messagingSenderId: "764805793058",
+        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+        measurementId: "G-S2PRPR80F5"
+    };
 
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-let userId = null;
+    let userId = null;
 
-function getParameterByName(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-}
-
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
     }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
-}
 
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
-function updateLocalEnergy() {
-    if (!userId) return;
-
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
-
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = ${energy};
-    });
-
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
-    });
-
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
-    });
-}
-
-window.onload = function() {
-    userId = getParameterByName('userId');
-    if (!userId) {
-        userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
         }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
     }
-    updateLocalEnergy();
-};
 
-function createFloatingText(x, y, text) {
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
-    floatingText.innerText = text;
-    document.body.appendChild(floatingText);
-
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-function handleClick(event) {
-    if (!userId) return;
-
-    const x = event.clientX;
-    const y = event.clientY;
-
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            set(userEnergyRef, newEnergy);
-            createFloatingText(x, y, '+1');
-
-            const userClicksRef = ref(database, users/${userId}/totalClicks);
-            get(userClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                set(userClicksRef, totalClicks + 1);
-            });
-        } else {
-            createFloatingText(x, y, 'No Energy');
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
         }
-    });
-}
+        return null;
+    }
 
-document.getElementById('button').addEventListener('click', handleClick);
+    function updateLocalEnergy() {
+        if (!userId) return;
 
-setInterval(() => {
-    if (!userId) return;
-    
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+        const userEnergyRef = ref(database, users/${userId}/energy);
+        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+        const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
 
-    get(userEnergyRef).then((snapshot) => {
-        let energy = snapshot.val();
-        get(userMaxEnergyRef).then((maxSnapshot) => {
-            const maxEnergy = maxSnapshot.val();
-            if (energy < maxEnergy) {
-                set(userEnergyRef, energy + 1);
-            }
+        onValue(userEnergyRef, (snapshot) => {
+            const energy = snapshot.val();
+            document.getElementById('energy-counter').innerText = Energy: ${energy};
         });
-    });
-}, 2000);
-        
-document.addEventListener('DOMContentLoaded', () => {
-    const button = document.querySelector('.button');
 
-    button.addEventListener('click', () => {
+        onValue(userMaxEnergyRef, (snapshot) => {
+            const maxEnergy = snapshot.val();
+            document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
+        });
+
+        onValue(userTotalClicksRef, (snapshot) => {
+            const totalClicks = snapshot.val() || 0;
+            document.getElementById('counter').innerText = totalClicks;
+        });
+    }
+
+    window.onload = function() {
+        userId = getParameterByName('userId');
+        if (!userId) {
+            userId = getCookie('userId');
+            if (!userId) {
+                userId = prompt('Enter your user ID:');
+                setCookie('userId', userId, 7);
+            }
+        }
+        updateLocalEnergy();
+    };
+
+    function createFloatingText(x, y, text) {
+        const floatingText = document.createElement('div');
+        floatingText.className = 'floating-text';
+        floatingText.style.left = ${x}px;
+        floatingText.style.top = ${y}px;
+        floatingText.innerText = text;
+        document.body.appendChild(floatingText);
+
+        setTimeout(() => {
+            floatingText.remove();
+        }, 1000);
+    }
+
+    function handleClick(event) {
+        if (!userId) return;
+
+        const x = event.clientX;
+        const y = event.clientY;
+        const button = document.getElementById('button');
+
+        // Определение размеров кнопки и её центра
+        const rect = button.getBoundingClientRect();
+        const buttonCenterX = rect.left + rect.width / 2;
+        const buttonCenterY = rect.top + rect.height / 2;
+
+        // Вычисление угла наклона
+        const deltaX = x - buttonCenterX;
+        const deltaY = y - buttonCenterY;
+        const tiltX = deltaX / 20; // Измените 20 для регулировки интенсивности наклона
+        const tiltY = -deltaY / 20; // Измените 20 для регулировки интенсивности наклона
+
+        button.style.transform = rotateX(${tiltY}deg) rotateY(${tiltX}deg);
+
+        // Применение анимации и сброс трансформации после завершения анимации
         button.classList.add('animated');
         setTimeout(() => {
             button.classList.remove('animated');
-        }, 300); // Длительность анимации
-    });
-});
+            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        }, 300); // Убедитесь, что это значение соответствует времени анимации
+
+        setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
+
+        const userEnergyRef = ref(database, users/${userId}/energy);
+        get(userEnergyRef).then((snapshot) => {
+            const energy = snapshot.val();
+            if (energy > 0) {
+                const newEnergy = energy - 1;
+                set(userEnergyRef, newEnergy);
+                createFloatingText(x, y, '+1');
+
+                // Обновляем счетчик кликов
+                const userClicksRef = ref(database, users/${userId}/totalClicks);
+                get(userClicksRef).then((snapshot) => {
+                    const totalClicks = snapshot.val() || 0;
+                    set(userClicksRef, totalClicks + 1);
+                });
+            } else {
+                createFloatingText(x, y, 'No Energy');
+            }
+        });
+    }
+
+    document.getElementById('button').addEventListener('click', handleClick);
     </script>
 </body>
 </html>
