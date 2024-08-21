@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy Button</title>
+    <title>RPMcoinbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
         /* Общие стили для всех устройств */
         body {
@@ -30,6 +30,16 @@
             overflow: hidden;
             backdrop-filter: blur(30px);
             color: #fff;
+        }
+
+        .styled-rectangle {
+            width: 90%;
+            height: 151px;
+            background-color: #1b1b1b; /* Темный фон */
+            border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
+            border-radius: 35px; /* Округленные углы */
+            box-shadow: 0 0 8px rgba(138, 43, 226, 1), 0 0 15px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.7); /* Прозрачное свечение */
+            margin: 20px auto; /* Центрирование */
         }
 
         .container {
@@ -83,6 +93,15 @@
             top: 30px;
         }
 
+        .counter {
+            font-size: 48px; 
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            position: relative;
+            top: 40px;
+        }
+
         .floating-text {
             position: absolute;
             color: rgba(255, 255, 255, 0.8);
@@ -108,10 +127,18 @@
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 300px; 
-                height: 300px; 
-                top: 200px;
+                width: 400px; 
+                height: 400px; 
+                top: 240px;
                 position: relative;
+            }
+            
+            .counter {
+                font-size: 36px; 
+                position: absolute;
+                bottom: 0px;
+                top: 50px;
+                left: 10px;
             }
             
             .energy-counter {
@@ -120,133 +147,177 @@
                 font-weight: bold;
                 text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
                 font-family: 'Nunito';
-                position: absolute;
-                top: 60px;
-                left: 10px;
+                bottom: -20px;
+            }
+            
+            .styled-rectangle {
+                width: 100%; /* Установите ширину на 100% */
+                height: 150px;
+                position: fixed; /* Используйте fixed для фиксации внизу страницы */
+                bottom: -40px; /* Расположите элемент внизу страницы */
+                left: -2px; /* Расположите элемент по левому краю */
+                margin: 0; /* Удалите все отступы */
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="button" id="energyButton">Click Me</button>
-        <div class="energy-counter" id="energyCounter">Energy: 0</div>
-        <div class="floating-text" id="floatingText"></div>
+        <div class="button" id="button"></div>
+        <div class="counter" id="counter">0</div>
+        <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
     <!-- Подключаем Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
-    <script>
-        // Ваши настройки Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+    <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        // Инициализация Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database(app);
+const firebaseConfig = {
+    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+    authDomain: "rpmcoins-48e4f.firebaseapp.com",
+    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+    projectId: "rpmcoins-48e4f",
+    storageBucket: "rpmcoins-48e4f.appspot.com",
+    messagingSenderId: "764805793058",
+    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+    measurementId: "G-S2PRPR80F5"
+};
 
-        let userId = null;
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+let userId = null;
+
+function getParameterByName(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function updateLocalEnergy() {
+    if (!userId) return;
+
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+    onValue(userEnergyRef, (snapshot) => {
+        const energy = snapshot.val();
+        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+    });
+
+    onValue(userMaxEnergyRef, (snapshot) => {
+        const maxEnergy = snapshot.val();
+        document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
+    });
+
+    onValue(userTotalClicksRef, (snapshot) => {
+        const totalClicks = snapshot.val() || 0;
+        document.getElementById('counter').innerText = totalClicks;
+    });
+}
+
+window.onload = function() {
+    userId = getParameterByName('userId');
+    if (!userId) {
+        userId = getCookie('userId');
+        if (!userId) {
+            userId = prompt('Enter your user ID:');
+            setCookie('userId', userId, 7);
         }
+    }
+    updateLocalEnergy();
+};
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
+function createFloatingText(x, y, text) {
+    const floatingText = document.createElement('div');
+    floatingText.className = 'floating-text';
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    floatingText.innerText = text;
+    document.body.appendChild(floatingText);
 
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000);
+}
 
-        function updateEnergyCounter() {
-            if (!userId) return;
+function handleClick(event) {
+    if (!userId) return;
 
-            const userEnergyRef = database.ref(`users/${userId}/energy`);
+    const x = event.clientX;
+    const y = event.clientY;
 
-            userEnergyRef.on('value', (snapshot) => {
-                const energy = snapshot.val() || 0;
-                document.getElementById('energyCounter').innerText = `Energy: ${energy}`;
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    get(userEnergyRef).then((snapshot) => {
+        const energy = snapshot.val();
+        if (energy > 0) {
+            const newEnergy = energy - 1;
+            set(userEnergyRef, newEnergy);
+            createFloatingText(x, y, '+1');
+
+            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            get(userClicksRef).then((snapshot) => {
+                const totalClicks = snapshot.val() || 0;
+                set(userClicksRef, totalClicks + 1);
             });
+        } else {
+            createFloatingText(x, y, 'No Energy');
         }
+    });
+}
 
-        function createFloatingText(x, y, text) {
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-            floatingText.innerText = text;
-            document.body.appendChild(floatingText);
+document.getElementById('button').addEventListener('click', handleClick);
 
-            setTimeout(() => {
-                floatingText.remove();
-            }, 1000);
-        }
+setInterval(() => {
+    if (!userId) return;
+    
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-        function handleClick(event) {
-            if (!userId) return;
-
-            const x = event.clientX;
-            const y = event.clientY;
-
-            const userEnergyRef = database.ref(`users/${userId}/energy`);
-
-            userEnergyRef.transaction((currentEnergy) => {
-                if (currentEnergy === null) {
-                    return 0;
-                }
-                if (currentEnergy > 0) {
-                    createFloatingText(x, y, '+1');
-                    return currentEnergy + 1;
-                } else {
-                    createFloatingText(x, y, 'No Energy');
-                    return currentEnergy;
-                }
-            });
-
-            // Обновляем счетчик кликов
-            const userClicksRef = database.ref(`users/${userId}/totalClicks`);
-            userClicksRef.transaction((currentClicks) => {
-                return (currentClicks || 0) + 1;
-            });
-        }
-
-        window.onload = function() {
-            userId = getParameterByName('userId');
-            if (!userId) {
-                userId = getCookie('userId');
-                if (!userId) {
-                    userId = prompt('Enter your user ID:');
-                    setCookie('userId', userId, 7);
-                }
+    get(userEnergyRef).then((snapshot) => {
+        let energy = snapshot.val();
+        get(userMaxEnergyRef).then((maxSnapshot) => {
+            const maxEnergy = maxSnapshot.val();
+            if (energy < maxEnergy) {
+                set(userEnergyRef, energy + 1);
             }
-            updateEnergyCounter();
-        };
+        });
+    });
+}, 2000);
+        
+document.addEventListener('DOMContentLoaded', () => {
+    const button = document.querySelector('.button');
 
-        document.getElementById('energyButton').addEventListener('click', handleClick);
+    button.addEventListener('click', () => {
+        button.classList.add('animated');
+        setTimeout(() => {
+            button.classList.remove('animated');
+        }, 300); // Длительность анимации
+    });
+});
     </script>
 </body>
 </html>
