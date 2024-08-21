@@ -42,6 +42,16 @@
             margin: 20px auto; /* Центрирование */
         }
 
+        .styled-checker {
+            width: 90%;
+            height: 150px;
+            background-color: #1b1b1b; /* Темный фон */
+            border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
+            border-radius: 10px; /* Округленные углы */
+            box-shadow: 0 0 8px rgba(138, 43, 226, 1), 0 0 15px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.7); /* Прозрачное свечение */
+            margin: 20px auto; /* Центрирование */
+        }
+
         .container {
             display: block;
             text-align: center;
@@ -143,6 +153,15 @@
                 left: -2px; /* Расположите элемент по левому краю */
                 margin: 0; /* Удалите все отступы */
             }
+
+            .styled-checker {
+                width: 100%; /* Установите ширину на 100% */
+                height: 150px;
+                position: fixed; /* Используйте fixed для фиксации внизу страницы */
+                top: 0; /* Расположите элемент внизу страницы */
+                left: 0; /* Расположите элемент по левому краю */
+                margin: 0; /* Удалите все отступы */
+            }
         }
     </style>
 </head>
@@ -151,7 +170,8 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
-        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
+        <div class="styled-rectangle"></div>
+        <div class="styled-checker"></div><!-- Добавление прямоугольника -->
     </div>
 
     <!-- Подключаем Firebase -->
