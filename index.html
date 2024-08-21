@@ -161,132 +161,120 @@
 
     <!-- Подключаем Firebase -->
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-        authDomain: "rpmcoins-48e4f.firebaseapp.com",
-        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-        projectId: "rpmcoins-48e4f",
-        storageBucket: "rpmcoins-48e4f.appspot.com",
-        messagingSenderId: "764805793058",
-        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-        measurementId: "G-S2PRPR80F5"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+    authDomain: "rpmcoins-48e4f.firebaseapp.com",
+    databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+    projectId: "rpmcoins-48e4f",
+    storageBucket: "rpmcoins-48e4f.appspot.com",
+    messagingSenderId: "764805793058",
+    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+    measurementId: "G-S2PRPR80F5"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-    let userId = null;
+let userId = null;
 
-    function getParameterByName(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
+function getParameterByName(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
     }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
 
-    function setCookie(name, value, days) {
-        let expires = "";
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
     }
+    return null;
+}
 
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+function updateLocalEnergy() {
+    if (!userId) return;
+
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+
+    onValue(userEnergyRef, (snapshot) => {
+        const energy = snapshot.val();
+        if (energy !== null) {
+            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+            setCookie('energy', energy, 1);
         }
-        return null;
-    }
-
-    function updateLocalEnergy() {
-        if (!userId) return;
-
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userClicksRef = ref(database, `users/${userId}/clicks`);
-
-        onValue(userEnergyRef, (snapshot) => {
-            const energy = snapshot.val();
-            if (energy !== null) {
-                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                setCookie('energy', energy, 1);
-            }
-        }, (error) => {
-            console.error('Error reading energy:', error);
-        });
-
-        onValue(userClicksRef, (snapshot) => {
-            const clicks = snapshot.val();
-            if (clicks !== null) {
-                document.getElementById('counter').innerText = clicks;
-                setCookie('clicks', clicks, 1);
-            }
-        }, (error) => {
-            console.error('Error reading clicks:', error);
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        userId = getCookie('userId');
-        if (userId) {
-            updateLocalEnergy();
-        } else {
-            window.location.href = "registration.html";
-        }
-
-        const button = document.getElementById('button');
-
-        button.addEventListener('click', async (event) => {
-            if (!userId) return;
-
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
-
-            try {
-                const energySnapshot = await get(userEnergyRef);
-                let energy = energySnapshot.val();
-
-                if (energy > 0) {
-                    const clicksSnapshot = await get(userClicksRef);
-                    let clicks = clicksSnapshot.val();
-                    clicks += 1;
-
-                    await set(userClicksRef, clicks);
-                    await set(userEnergyRef, energy - 1);
-
-                    document.getElementById('counter').innerText = clicks;
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy - 1}`;
-
-                    createFloatingText(event.pageX, event.pageY, clicks);
-                } else {
-                    console.log('Not enough energy.');
-                }
-            } catch (error) {
-                console.error('Error updating energy or clicks:', error);
-            }
-        });
-
-        function createFloatingText(x, y, text) {
-            const floatingText = document.createElement('div');
-            floatingText.classList.add('floating-text');
-            floatingText.innerText = `+${text}`;
-            document.body.appendChild(floatingText);
-
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-
-            floatingText.addEventListener('animationend', () => {
-                floatingText.remove();
-            });
-        }
+    }, (error) => {
+        console.error('Error reading energy:', error);
     });
+
+    onValue(userMaxEnergyRef, (snapshot) => {
+        const maxEnergy = snapshot.val();
+        if (maxEnergy !== null) {
+            setCookie('maxEnergy', maxEnergy, 1);
+        }
+    }, (error) => {
+        console.error('Error reading max energy:', error);
+    });
+
+    onValue(userClicksRef, (snapshot) => {
+        const clicks = snapshot.val();
+        if (clicks !== null) {
+            document.getElementById('counter').innerText = clicks;
+        }
+    }, (error) => {
+        console.error('Error reading clicks:', error);
+    });
+}
+
+function showFloatingText(clicks, x, y) {
+    const floatingText = document.createElement('div');
+    floatingText.className = 'floating-text';
+    floatingText.innerText = clicks;
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    document.body.appendChild(floatingText);
+
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000); // Время анимации должно совпадать с временем анимации floatUp
+}
+
+function handleButtonClick(event) {
+    if (!userId) return;
+
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+
+    get(userClicksRef).then((snapshot) => {
+        const currentClicks = snapshot.val() || 0;
+        showFloatingText(currentClicks, event.clientX, event.clientY);
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    userId = getCookie('userId') || getParameterByName('userId');
+    if (userId) {
+        setCookie('userId', userId, 1);
+        updateLocalEnergy();
+    }
+
+    document.getElementById('button').addEventListener('click', handleButtonClick);
+});
     </script>
 </body>
 </html>
