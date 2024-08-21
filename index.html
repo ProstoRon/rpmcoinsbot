@@ -229,50 +229,73 @@
                 setCookie('maxEnergy', maxEnergy, 1);
             }
         }, (error) => {
-            console.error('Error reading max energy:', error);
+            console.error('Error reading maxEnergy:', error);
         });
 
         onValue(userTotalClicksRef, (snapshot) => {
-            const totalClicks = snapshot.val();
-            if (totalClicks !== null) {
-                document.getElementById('counter').innerText = totalClicks;
+            const clicks = snapshot.val();
+            if (clicks !== null) {
+                document.getElementById('counter').innerText = clicks;
+                setCookie('totalClicks', clicks, 1);
             }
         }, (error) => {
-            console.error('Error reading total clicks:', error);
+            console.error('Error reading totalClicks:', error);
         });
     }
 
-    function handleButtonClick() {
-        if (!userId) return;
-
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-        get(userEnergyRef).then((snapshot) => {
-            const currentEnergy = snapshot.val();
-            if (currentEnergy > 0) {
-                // Update clicks
-                get(userClicksRef).then((clicksSnapshot) => {
-                    const currentClicks = clicksSnapshot.val() || 0;
-                    set(userClicksRef, currentClicks + 1);
-
-                    // Decrease energy
-                    set(userEnergyRef, currentEnergy - 1);
-                });
-            } else {
-                alert('Not enough energy!');
-            }
-        });
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        userId = getCookie('userId') || getParameterByName('userId');
+    document.addEventListener('DOMContentLoaded', () => {
+        userId = getCookie('userId');
         if (userId) {
-            setCookie('userId', userId, 1);
             updateLocalEnergy();
+        } else {
+            window.location.href = "registration.html";
         }
 
-        document.getElementById('button').addEventListener('click', handleButtonClick);
+        const button = document.getElementById('button');
+
+        button.addEventListener('click', async (event) => {
+            if (!userId) return;
+
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+            try {
+                const energySnapshot = await get(userEnergyRef);
+                let energy = energySnapshot.val();
+
+                if (energy > 0) {
+                    const clicksSnapshot = await get(userTotalClicksRef);
+                    let clicks = clicksSnapshot.val();
+                    clicks += 1;
+
+                    await set(userTotalClicksRef, clicks);
+                    await set(userEnergyRef, energy - 1);
+
+                    document.getElementById('counter').innerText = clicks;
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy - 1}`;
+
+                    createFloatingText(event.pageX, event.pageY, clicks);
+                } else {
+                    console.log('Not enough energy.');
+                }
+            } catch (error) {
+                console.error('Error updating energy or clicks:', error);
+            }
+        });
+
+        function createFloatingText(x, y, text) {
+            const floatingText = document.createElement('div');
+            floatingText.classList.add('floating-text');
+            floatingText.innerText = `+${text}`;
+            document.body.appendChild(floatingText);
+
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+
+            floatingText.addEventListener('animationend', () => {
+                floatingText.remove();
+            });
+        }
     });
     </script>
 </body>
