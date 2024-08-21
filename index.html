@@ -147,6 +147,7 @@
             .button:active {
                transform: scale(0.9);
             }
+
         }
     </style>
 </head>
@@ -245,56 +246,58 @@
         const floatingText = document.createElement('div');
         floatingText.className = 'floating-text';
         floatingText.innerText = text;
-        floatingText.style.left = `${x}px`;
-        floatingText.style.top = `${y}px`;
+
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        floatingText.style.left = `${x + scrollX}px`;
+        floatingText.style.top = `${y + scrollY}px`;
+
         document.body.appendChild(floatingText);
         setTimeout(() => {
             document.body.removeChild(floatingText);
         }, 1000); // Удаление через 1 секунду
     }
 
-    function handleButtonClick(event) {
+    function handleClick(event) {
         if (!userId) return;
 
+        const x = event.clientX;
+        const y = event.clientY;
+
         const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-        const userClickCountRef = ref(database, `users/${userId}/clicks`);
-
         get(userEnergyRef).then((snapshot) => {
-            const currentEnergy = snapshot.val();
-            if (currentEnergy > 0) {
-                // Update clicks
-                get(userClicksRef).then((clicksSnapshot) => {
-                    const currentClicks = clicksSnapshot.val() || 0;
-                    set(userClicksRef, currentClicks + 1);
+            const energy = snapshot.val();
+            if (energy > 0) {
+                const newEnergy = energy - 1;
+                set(userEnergyRef, newEnergy);
+                createFloatingText(x, y, '+1');
 
-                    // Decrease energy
-                    set(userEnergyRef, currentEnergy - 1);
-
-                    // Create and show floating text
-                    get(userClickCountRef).then((clicksSnapshot) => {
-                        const clicks = clicksSnapshot.val() || 0;
-                        const rect = event.target.getBoundingClientRect();
-                        const x = event.clientX - rect.left;
-                        const y = event.clientY - rect.top;
-                        createFloatingText(x, y, clicks);
-                    });
+                // Обновляем счетчик кликов
+                const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+                get(userClicksRef).then((snapshot) => {
+                    const totalClicks = snapshot.val() || 0;
+                    set(userClicksRef, totalClicks + 1);
                 });
             } else {
-                alert('Not enough energy!');
+                createFloatingText(x, y, 'No Energy');
             }
         });
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        userId = getCookie('userId') || getParameterByName('userId');
-        if (userId) {
-            setCookie('userId', userId, 1);
-            updateLocalEnergy();
-        }
+    document.getElementById('button').addEventListener('click', handleClick);
 
-        document.getElementById('button').addEventListener('click', handleButtonClick);
-    });
+    // Инициализация
+    userId = getParameterByName('userId');
+    if (userId) {
+        setCookie('userId', userId, 1);
+    } else {
+        userId = getCookie('userId');
+    }
+
+    if (userId) {
+        updateLocalEnergy();
+    }
     </script>
 </body>
 </html>
