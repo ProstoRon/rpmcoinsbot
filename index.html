@@ -210,7 +210,7 @@ function updateLocalEnergy() {
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+        document.getElementById('energy-counter').innerText = `${energy}`;
     });
 
     onValue(userMaxEnergyRef, (snapshot) => {
