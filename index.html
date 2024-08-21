@@ -204,24 +204,20 @@ function getCookie(name) {
 function updateLocalEnergy() {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergy = getCookie(`userEnergy_${userId}`);
+    const userMaxEnergy = getCookie(`userMaxEnergy_${userId}`);
+    const userTotalClicks = getCookie(`userTotalClicks_${userId}`);
 
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = ${energy};
-    });
+    document.getElementById('energy-counter').innerText = `Energy: ${userEnergy || 0}`;
+    document.getElementById('counter').innerText = userTotalClicks || 0;
+}
 
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
-    });
-
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
-    });
+function saveEnergyToCookies(energy, maxEnergy, totalClicks) {
+    if (!userId) return;
+    
+    setCookie(`userEnergy_${userId}`, energy, 7);
+    setCookie(`userMaxEnergy_${userId}`, maxEnergy, 7);
+    setCookie(`userTotalClicks_${userId}`, totalClicks, 7);
 }
 
 window.onload = function() {
@@ -239,8 +235,8 @@ window.onload = function() {
 function createFloatingText(x, y, text) {
     const floatingText = document.createElement('div');
     floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
     floatingText.innerText = text;
     document.body.appendChild(floatingText);
 
@@ -255,23 +251,17 @@ function handleClick(event) {
     const x = event.clientX;
     const y = event.clientY;
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            set(userEnergyRef, newEnergy);
-            createFloatingText(x, y, '+1');
-
-            const userClicksRef = ref(database, users/${userId}/totalClicks);
-            get(userClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                set(userClicksRef, totalClicks + 1);
-            });
-        } else {
-            createFloatingText(x, y, 'No Energy');
-        }
-    });
+    const userEnergy = parseInt(getCookie(`userEnergy_${userId}`)) || 0;
+    if (userEnergy > 0) {
+        const newEnergy = userEnergy - 1;
+        const userMaxEnergy = parseInt(getCookie(`userMaxEnergy_${userId}`)) || 0;
+        const totalClicks = parseInt(getCookie(`userTotalClicks_${userId}`)) || 0;
+        
+        saveEnergyToCookies(newEnergy, userMaxEnergy, totalClicks + 1);
+        createFloatingText(x, y, '+1');
+    } else {
+        createFloatingText(x, y, 'No Energy');
+    }
 }
 
 document.getElementById('button').addEventListener('click', handleClick);
@@ -279,20 +269,15 @@ document.getElementById('button').addEventListener('click', handleClick);
 setInterval(() => {
     if (!userId) return;
     
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+    let userEnergy = parseInt(getCookie(`userEnergy_${userId}`)) || 0;
+    const userMaxEnergy = parseInt(getCookie(`userMaxEnergy_${userId}`)) || 0;
 
-    get(userEnergyRef).then((snapshot) => {
-        let energy = snapshot.val();
-        get(userMaxEnergyRef).then((maxSnapshot) => {
-            const maxEnergy = maxSnapshot.val();
-            if (energy < maxEnergy) {
-                set(userEnergyRef, energy + 1);
-            }
-        });
-    });
+    if (userEnergy < userMaxEnergy) {
+        userEnergy = Math.min(userEnergy + 1, userMaxEnergy);
+        saveEnergyToCookies(userEnergy, userMaxEnergy, parseInt(getCookie(`userTotalClicks_${userId}`)) || 0);
+    }
 }, 2000);
-        
+
 document.addEventListener('DOMContentLoaded', () => {
     const button = document.querySelector('.button');
 
