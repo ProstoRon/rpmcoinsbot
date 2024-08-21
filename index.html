@@ -208,6 +208,8 @@ function getCookie(name) {
 function updateEnergy() {
     if (!userId) return;
 
+    console.log('Updating energy for user:', userId);
+
     const userEnergyRef = ref(database, `users/${userId}/energy`);
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
     const userLastUpdateRef = ref(database, `users/${userId}/lastUpdate`);
@@ -226,12 +228,17 @@ function updateEnergy() {
                 const elapsedEnergy = Math.floor(elapsedTime / energyRegenerationInterval) * energyRegenerationRate;
                 const updatedEnergy = Math.min(energy + elapsedEnergy, maxEnergy);
                 if (updatedEnergy > energy) {
+                    console.log(`Updating energy from ${energy} to ${updatedEnergy}`);
                     set(userEnergyRef, updatedEnergy);
                 }
                 // Обновление lastUpdate в базе данных
                 set(userLastUpdateRef, currentTime);
             });
+        }).catch(error => {
+            console.error('Error fetching user energy:', error);
         });
+    }).catch(error => {
+        console.error('Error fetching last update time:', error);
     });
 }
 
@@ -243,6 +250,7 @@ function updateLocalEnergy() {
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
+        console.log('Current energy:', energy);
         document.getElementById('energy-counter').innerText = energy || 0;
     });
 }
@@ -255,6 +263,7 @@ function updateClickCounter() {
 
     onValue(userClickRef, (snapshot) => {
         const clicks = snapshot.val();
+        console.log('Current clicks:', clicks);
         document.getElementById('counter').innerText = clicks || 0;
     });
 }
@@ -272,9 +281,14 @@ document.getElementById('button').addEventListener('click', () => {
             get(userClickRef).then((clickSnapshot) => {
                 const clicks = clickSnapshot.val() || 0;
                 set(userClickRef, clicks + 1); // Увеличение счетчика кликов на 1
+            }).catch(error => {
+                console.error('Error fetching user clicks:', error);
             });
         }
+    }).catch(error => {
+        console.error('Error fetching user energy:', error);
     });
+
     document.querySelector('.button').classList.add('animated');
     setTimeout(() => document.querySelector('.button').classList.remove('animated'), 300);
 });
@@ -290,14 +304,18 @@ window.onload = function() {
         }
     }
 
-    updateLocalEnergy();
-    updateClickCounter();
-    updateEnergy(); // Обновляем энергию при загрузке
+    if (userId) {
+        updateLocalEnergy();
+        updateClickCounter();
+        updateEnergy(); // Обновляем энергию при загрузке
 
-    // Обновление энергии регулярно
-    setInterval(() => {
-        updateEnergy();
-    }, 300000); // Каждые 5 минут
+        // Обновление энергии регулярно
+        setInterval(() => {
+            updateEnergy();
+        }, 300000); // Каждые 5 минут
+    } else {
+        console.error('No user ID found');
+    }
 };
     </script>
 </body>
