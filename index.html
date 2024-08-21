@@ -60,12 +60,26 @@
             align-items: center;
             cursor: pointer;
             margin-bottom: 20px;
-            transition: transform 0.2s ease; /* Плавная анимация */
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
+            transition: transform 0.2s ease; /* Плавная анимация */
+        }
+
+        .button.animated {
+            animation: tilt 0.3s ease forwards;
+        }
+
+        @keyframes tilt {
+            0% {
+                transform: rotateY(0deg);
+            }
+            50% {
+                transform: rotateY(-10deg); /* Наклон влево */
+            }
+            100% {
+                transform: rotateY(0deg); /* Возвращение в исходное состояние */
+            }
         }
 
         .energy-counter {
@@ -215,28 +229,17 @@
 
         onValue(userEnergyRef, (snapshot) => {
             const energy = snapshot.val();
-            if (energy !== null) {
-                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                setCookie('energy', energy, 1);
-            }
-        }, (error) => {
-            console.error('Error reading energy:', error);
+            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
         });
 
         onValue(userMaxEnergyRef, (snapshot) => {
             const maxEnergy = snapshot.val();
-            if (maxEnergy !== null) {
-                setCookie('maxEnergy', maxEnergy, 1);
-            }
-        }, (error) => {
-            console.error('Error reading max energy:', error);
+            document.getElementById('energy-counter').innerText = `Energy: ${Math.min(maxEnergy, document.getElementById('energy-counter').innerText.split(' ')[1])}`;
         });
 
         onValue(userTotalClicksRef, (snapshot) => {
-            const totalClicks = snapshot.val();
-            if (totalClicks !== null) {
-                document.getElementById('counter').innerText = totalClicks;
-            }
+            const totalClicks = snapshot.val() || 0;
+            document.getElementById('counter').innerText = totalClicks;
         }, (error) => {
             console.error('Error reading total clicks:', error);
         });
@@ -264,6 +267,10 @@
 
         const x = event.clientX;
         const y = event.clientY;
+
+        const button = document.getElementById('button');
+        button.classList.add('animated');
+        setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         get(userEnergyRef).then((snapshot) => {
