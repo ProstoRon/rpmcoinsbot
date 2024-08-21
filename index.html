@@ -65,236 +65,93 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .button.animated {
-            animation: tilt 0.3s ease forwards;
-        }
-
-        @keyframes tilt {
-            0% {
-                transform: rotateY(0deg);
-            }
-            50% {
-                transform: rotateY(-10deg);
-            }
-            100% {
-                transform: rotateY(0deg);
-            }
-        }
-
-        .energy-counter {
-            font-size: 48px;
-            color: #f0b924;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-            font-family: 'Nunito';
-            position: relative;
-            top: 30px;
-        }
-
-        .counter {
-            font-size: 48px;
-            color: #333;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-            position: relative;
-            top: 40px;
-        }
-
         .floating-text {
             position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 28px;
-            font-weight: bold;
-            animation: floatUp 1s ease forwards;
+            color: #ff0;
+            font-size: 24px;
+            animation: fade 1s ease-out forwards;
             pointer-events: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        @keyframes floatUp {
+        @keyframes fade {
             0% {
                 opacity: 1;
                 transform: translateY(0);
             }
             100% {
                 opacity: 0;
-                transform: translateY(-100px);
-            }
-        }
-
-        @media only screen and (max-width: 768px) {
-            .button {
-                width: 400px;
-                height: 400px;
-                top: 190px;
-                position: relative;
-            }
-
-            .counter {
-                font-size: 36px;
-                position: absolute;
-                bottom: 0px;
-                top: 50px;
-                left: 10px;
-            }
-
-            .energy-counter {
-                font-size: 36px;
-                color: #f0b924;
-                font-weight: bold;
-                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-                font-family: 'Nunito';
-                bottom: -20px;
-            }
-
-            .styled-rectangle {
-                width: 100%;
-                height: 150px;
-                position: fixed;
-                bottom: -40px;
-                left: -2px;
-                margin: 0;
-            }
-
-            .button:active {
-                transform: scale(0.9);
+                transform: translateY(-20px);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="button" id="button"></div>
-        <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="button"></div>
         <div class="styled-rectangle"></div>
     </div>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            // Ваши данные Firebase
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        const userId = 'Ваш ID пользователя'; // Установите ваш ID пользователя
+        const maxEnergy = 100;
+        let energy = parseInt(getCookie("energy")) || maxEnergy;
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-        authDomain: "rpmcoins-48e4f.firebaseapp.com",
-        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-        projectId: "rpmcoins-48e4f",
-        storageBucket: "rpmcoins-48e4f.appspot.com",
-        messagingSenderId: "764805793058",
-        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-        measurementId: "G-S2PRPR80F5"
-    };
+        const energyElement = document.querySelector('.styled-rectangle');
 
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+        function updateEnergyDisplay() {
+            energyElement.textContent = `Energy: ${energy}`;
+        }
 
-    let userId = null;
-
-    function getParameterByName(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-    }
-
-    function setCookie(name, value, days) {
-        let expires = "";
-        if (days) {
+        function setCookie(name, value, days) {
             const date = new Date();
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
-    }
-
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-    }
-
-    function updateEnergyInDB(newEnergy) {
-        if (userId) {
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            set(userEnergyRef, newEnergy);
-        }
-    }
-
-    function updateLocalEnergy() {
-        if (!userId) return;
-
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-        onValue(userEnergyRef, (snapshot) => {
-            const energy = snapshot.val();
-            document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-            setCookie('energy', energy, 7);  // Сохраняем энергию в куки
-        });
-
-        onValue(userMaxEnergyRef, (snapshot) => {
-            const maxEnergy = snapshot.val();
-            document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
-        });
-
-        onValue(userTotalClicksRef, (snapshot) => {
-            const totalClicks = snapshot.val() || 0;
-            document.getElementById('counter').innerText = totalClicks;
-        });
-    }
-
-    function incrementEnergy() {
-        if (!userId) return;
-
-        const energyCookie = parseInt(getCookie('energy')) || 0;
-        const maxEnergy = 100;  // Задаем максимальное значение энергии (можно изменить)
-
-        if (energyCookie < maxEnergy) {
-            const newEnergy = energyCookie + 1;
-            setCookie('energy', newEnergy, 7);
-            updateEnergyInDB(newEnergy); // Обновляем энергию в Firebase
-            document.getElementById('energy-counter').innerText = `Energy: ${newEnergy}`;
-        }
-    }
-
-    function decrementEnergy() {
-        const energyCookie = parseInt(getCookie('energy')) || 0;
-
-        if (energyCookie > 0) {
-            const newEnergy = energyCookie - 1;
-            setCookie('energy', newEnergy, 7);
-            updateEnergyInDB(newEnergy); // Обновляем энергию в Firebase
-            return true;
+            const expires = "; expires=" + date.toUTCString();
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
         }
 
-        return false;
-    }
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
 
-    userId = getParameterByName('userid');
+        function updateEnergyInDatabase(newEnergy) {
+            firebase.database().ref(`users/${userId}/energy`).set(newEnergy);
+        }
 
-    if (userId) {
-        updateLocalEnergy();
+        setInterval(() => {
+            if (energy < maxEnergy) {
+                energy += 1;
+                setCookie("energy", energy, 1);
+                updateEnergyInDatabase(energy);
+                updateEnergyDisplay();
+            }
+        }, 2500); // Восстанавливаем 1 единицу энергии каждые 2 секунды
 
-        document.getElementById('button').addEventListener('click', () => {
-            if (decrementEnergy()) {
-                const counterElement = document.getElementById('counter');
-                const counterValue = parseInt(counterElement.innerText);
-                const newCounterValue = counterValue + 1;
-
-                counterElement.innerText = newCounterValue;
-
-                const userClicksRef = ref(database, `users/${userId}/clicks`);
-                set(userClicksRef, newCounterValue);
+        document.querySelector('.button').addEventListener('click', function(e) {
+            if (energy > 0) {
+                energy -= 1;
+                setCookie("energy", energy, 1);
+                updateEnergyInDatabase(energy);
+                updateEnergyDisplay();
 
                 const floatingText = document.createElement('div');
                 floatingText.className = 'floating-text';
-                floatingText.innerText = '+1';
-                floatingText.style.left = `${Math.random() * 100}px`;
-                floatingText.style.top = `${Math.random() * 100}px`;
+                floatingText.textContent = '-1';
+                floatingText.style.left = e.clientX + 'px';
+                floatingText.style.top = e.clientY + 'px';
                 document.body.appendChild(floatingText);
 
                 setTimeout(() => {
@@ -303,8 +160,7 @@
             }
         });
 
-        setInterval(incrementEnergy, 2500);  // Восстановление энергии каждые 2,5 секунды
-    }
+        updateEnergyDisplay();
     </script>
 </body>
 </html>
