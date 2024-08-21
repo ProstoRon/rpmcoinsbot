@@ -32,6 +32,16 @@
             color: #fff;
         }
 
+        .styled-rectangle {
+            width: 90%;
+            height: 150px;
+            background-color: #1b1b1b; /* Темный фон */
+            border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
+            border-radius: 35px; /* Округленные углы */
+            box-shadow: 0 0 5px rgba(138, 43, 226, 0.8), 0 0 10px rgba(138, 43, 226, 0.6), 0 0 15px rgba(138, 43, 226, 0.4); /* Прозрачное свечение */
+            margin: 20px auto; /* Центрирование */
+        }
+
         .container {
             display: block;
             text-align: center;
@@ -64,6 +74,7 @@
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
             font-family: 'Nunito';
+            position: relative;
             top: 30px;
         }
 
@@ -72,6 +83,7 @@
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
+            position: relative;
             top: 40px;
         }
 
@@ -97,17 +109,6 @@
             }
         }
 
-        /* Стили для прямоугольника */
-        .styled-rectangle {
-            width: 90%;
-            height: 150px;
-            background-color: #1b1b1b; /* Темный фон */
-            border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
-            border-radius: 35px; /* Округленные углы */
-            box-shadow: 0 0 5px rgba(138, 43, 226, 0.8), 0 0 10px rgba(138, 43, 226, 0.6), 0 0 15px rgba(138, 43, 226, 0.4); /* Прозрачное свечение */
-            margin: 20px auto; /* Центрирование */
-        }
-
         /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
@@ -122,6 +123,7 @@
                 position: absolute;
                 bottom: 0px;
                 top: 50px;
+                left: 10px;
             }
             
             .energy-counter {
@@ -132,10 +134,15 @@
                 font-family: 'Nunito';
                 top: 30px;
             }
-
+            
             .styled-rectangle {
-                height: 120px; /* Уменьшенная высота для мобильных устройств */
-                margin: 10px auto; /* Уменьшенный отступ */
+                width: 100%; /* Установите ширину на 100% */
+                height: 150px;
+                position: absolute;
+                bottom: -340px; /* Расположите элемент внизу страницы */
+                left: 0; /* Расположите элемент по левому краю */
+                margin: 0; /* Удалите все отступы */
+                border: none; /* Удалите границу, чтобы избежать фиолетового фона по краям */
             }
         }
     </style>
@@ -145,123 +152,124 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
-        <div class="styled-rectangle"></div> <!-- Добавляем прямоугольник -->
+        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
     <!-- Подключаем Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
-            authDomain: "rpmcoins-48e4f.firebaseapp.com",
-            databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
-            projectId: "rpmcoins-48e4f",
-            storageBucket: "rpmcoins-48e4f.appspot.com",
-            messagingSenderId: "764805793058",
-            appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
-            measurementId: "G-S2PRPR80F5"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
+        authDomain: "rpmcoins-48e4f.firebaseapp.com",
+        databaseURL: "https://rpmcoins-48e4f-default-rtdb.firebaseio.com",
+        projectId: "rpmcoins-48e4f",
+        storageBucket: "rpmcoins-48e4f.appspot.com",
+        messagingSenderId: "764805793058",
+        appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+        measurementId: "G-S2PRPR80F5"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-        let userId = null;
+    let userId = null;
 
-        function getParameterByName(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+    function getParameterByName(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
         }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
 
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
+    function getCookie(name) {
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
             return null;
         }
+    }
 
-        function updateLocalEnergy() {
-            if (!userId) return;
+    function updateLocalEnergy() {
+        if (!userId) return;
 
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-            onValue(userEnergyRef, (snapshot) => {
-                const energy = snapshot.val();
-                if (energy !== null) {
-                    document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-                    setCookie('energy', energy, 1); // сохраняем в куки на 1 день
-                }
-            }, (error) => {
-                console.error('Error reading energy:', error);
-            });
+        onValue(userEnergyRef, (snapshot) => {
+            const energy = snapshot.val();
+            if (energy !== null) {
+                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+                setCookie('energy', energy, 1);
+            }
+        }, (error) => {
+            console.error('Error reading energy:', error);
+        });
 
-            onValue(userMaxEnergyRef, (snapshot) => {
-                const maxEnergy = snapshot.val();
-                if (maxEnergy !== null) {
-                    setCookie('maxEnergy', maxEnergy, 1); // сохраняем в куки на 1 день
-                }
-            }, (error) => {
-                console.error('Error reading max energy:', error);
-            });
+        onValue(userMaxEnergyRef, (snapshot) => {
+            const maxEnergy = snapshot.val();
+            if (maxEnergy !== null) {
+                setCookie('maxEnergy', maxEnergy, 1);
+            }
+        }, (error) => {
+            console.error('Error reading max energy:', error);
+        });
 
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val();
-                if (totalClicks !== null) {
-                    document.getElementById('counter').innerText = totalClicks;
-                }
-            }, (error) => {
-                console.error('Error reading total clicks:', error);
-            });
+        onValue(userTotalClicksRef, (snapshot) => {
+            const totalClicks = snapshot.val();
+            if (totalClicks !== null) {
+                document.getElementById('counter').innerText = totalClicks;
+            }
+        }, (error) => {
+            console.error('Error reading total clicks:', error);
+        });
+    }
+
+    function handleButtonClick() {
+        if (!userId) return;
+
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+        get(userEnergyRef).then((snapshot) => {
+            const currentEnergy = snapshot.val();
+            if (currentEnergy > 0) {
+                // Update clicks
+                get(userClicksRef).then((clicksSnapshot) => {
+                    const currentClicks = clicksSnapshot.val() || 0;
+                    set(userClicksRef, currentClicks + 1);
+
+                    // Decrease energy
+                    set(userEnergyRef, currentEnergy - 1);
+                });
+            } else {
+                alert('Not enough energy!');
+            }
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        userId = getCookie('userId') || getParameterByName('userId');
+        if (userId) {
+            setCookie('userId', userId, 1);
+            updateLocalEnergy();
         }
 
-        window.onload = () => {
-            userId = getParameterByName('user_id');
-            if (userId) {
-                setCookie('user_id', userId, 1); // сохраняем в куки на 1 день
-                updateLocalEnergy();
-            } else {
-                userId = getCookie('user_id');
-                if (userId) {
-                    updateLocalEnergy();
-                } else {
-                    alert('User ID is required');
-                }
-            }
-
-            const button = document.getElementById('button');
-            button.addEventListener('click', () => {
-                if (!userId) return;
-
-                const userEnergyRef = ref(database, `users/${userId}/energy`);
-                get(userEnergyRef).then((snapshot) => {
-                    const energy = snapshot.val();
-                    if (energy > 0) {
-                        const newEnergy = Math.max(0, energy - 1);
-                        set(userEnergyRef, newEnergy);
-                        setCookie('energy', newEnergy, 1); // сохраняем в куки на 1 день
-                    }
-                }).catch((error) => {
-                    console.error('Error updating energy:', error);
-                });
-            });
-        };
+        document.getElementById('button').addEventListener('click', handleButtonClick);
+    });
     </script>
 </body>
 </html>
