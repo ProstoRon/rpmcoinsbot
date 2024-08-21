@@ -12,7 +12,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #910179
+            background: #910179;
         }
 
         .styled-rectangle {
@@ -111,7 +111,7 @@
         @media only screen and (max-width: 768px) {
             .button {
                 width: 410px; 
-                height: 410px; 
+                height: 410px;
                 top: 0;
                 position: relative;
                 bottom: 0;
@@ -207,6 +207,7 @@ function updateLocalEnergy() {
     const userEnergyRef = ref(database, `users/${userId}/energy`);
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
     const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+    const userLastUpdateRef = ref(database, `users/${userId}/lastUpdate`);
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
@@ -222,86 +223,52 @@ function updateLocalEnergy() {
         const totalClicks = snapshot.val() || 0;
         document.getElementById('counter').innerText = totalClicks;
     });
-}
 
-window.onload = function() {
-    userId = getParameterByName('userId');
-    if (!userId) {
-        userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
-        }
-    }
-    updateLocalEnergy();
-};
+    onValue(userLastUpdateRef, (snapshot) => {
+        const lastUpdate = snapshot.val();
+        const now = Date.now();
+        const elapsedTime = now - lastUpdate;
 
-function createFloatingText(x, y, text) {
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
-    floatingText.style.left = `${x}px`;
-    floatingText.style.top = `${y}px`;
-    floatingText.innerText = text;
-    document.body.appendChild(floatingText);
+        const secondsElapsed = Math.floor(elapsedTime / 1000);
+        const energyToAdd = Math.floor(secondsElapsed / 2); // Восполнение энергии каждые 2 секунды
 
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-function handleClick(event) {
-    if (!userId) return;
-
-    const x = event.clientX;
-    const y = event.clientY;
-
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            set(userEnergyRef, newEnergy);
-            createFloatingText(x, y, '+1');
-
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
-            get(userClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                set(userClicksRef, totalClicks + 1);
-            });
-        } else {
-            createFloatingText(x, y, 'No Energy');
-        }
+        set(userEnergyRef, (energy || 0) + energyToAdd);
+        set(userLastUpdateRef, now);
     });
 }
 
-document.getElementById('button').addEventListener('click', handleClick);
-
-setInterval(() => {
+function replenishEnergy() {
     if (!userId) return;
-    
+
     const userEnergyRef = ref(database, `users/${userId}/energy`);
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userLastUpdateRef = ref(database, `users/${userId}/lastUpdate`);
 
     get(userEnergyRef).then((snapshot) => {
-        let energy = snapshot.val();
-        get(userMaxEnergyRef).then((maxSnapshot) => {
-            const maxEnergy = maxSnapshot.val();
+        const energy = snapshot.val();
+        get(userMaxEnergyRef).then((snapshot) => {
+            const maxEnergy = snapshot.val();
             if (energy < maxEnergy) {
-                set(userEnergyRef, energy + 1);
+                set(userEnergyRef, Math.min(energy + 1, maxEnergy));
+                set(userLastUpdateRef, Date.now());
             }
         });
     });
-}, 2000);
-        
-document.addEventListener('DOMContentLoaded', () => {
-    const button = document.querySelector('.button');
+}
 
-    button.addEventListener('click', () => {
-        button.classList.add('animated');
-        setTimeout(() => {
-            button.classList.remove('animated');
-        }, 300); // Длительность анимации
-    });
+// Установка идентификатора пользователя и вызов функции для обновления и пополнения энергии
+window.onload = () => {
+    userId = getParameterByName('userId'); // Или другой способ установить userId
+
+    if (userId) {
+        updateLocalEnergy();
+    }
+};
+
+document.getElementById('button').addEventListener('click', () => {
+    if (!userId) return;
+
+    replenishEnergy();
 });
     </script>
 </body>
