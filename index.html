@@ -280,7 +280,7 @@ function createFloatingText(x, y, clicks) {
     floatingText.className = 'floating-text';
     floatingText.style.left = `${x}px`;
     floatingText.style.top = `${y}px`;
-    floatingText.innerText = `${clicks}`;
+    floatingText.innerText = `+${clicks}`;
     document.body.appendChild(floatingText);
 
     setTimeout(() => {
