@@ -226,7 +226,7 @@ function updateLocalEnergy() {
 
     const userEnergyRef = ref(database, `users/${userId}/energy`);
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
@@ -238,9 +238,9 @@ function updateLocalEnergy() {
         document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
     });
 
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
+    onValue(userClicksRef, (snapshot) => {
+        const clicks = snapshot.val() || 0;
+        document.getElementById('counter').innerText = clicks;
     });
 }
 
@@ -324,15 +324,13 @@ function handleClick(event) {
             const newEnergy = energy - 1;
             set(userEnergyRef, newEnergy);
 
-            // Обновляем счетчик кликов
-            const userClicksRef = ref(database, `users/${userId}/totalClicks`);
+            // Получаем значение clicks и отображаем его
+            const userClicksRef = ref(database, `users/${userId}/clicks`);
             get(userClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                const newClicks = totalClicks + 1;
-                set(userClicksRef, newClicks);
+                const clicks = snapshot.val() || 0;
                 
-                // Отображаем новое значение кликов в floating-text
-                createFloatingText(x, y, `+${newClicks}`);
+                // Отображаем значение clicks в floating-text
+                createFloatingText(x, y, clicks);
             });
         } else {
             createFloatingText(x, y, 'No Energy');
