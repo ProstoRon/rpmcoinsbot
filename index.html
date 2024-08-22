@@ -226,7 +226,7 @@ function updateLocalEnergy() {
 
     const userEnergyRef = ref(database, `users/${userId}/energy`);
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
@@ -238,9 +238,9 @@ function updateLocalEnergy() {
         document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
     });
 
-    onValue(userClicksRef, (snapshot) => {
-        const clicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = clicks;
+    onValue(userTotalClicksRef, (snapshot) => {
+        const totalClicks = snapshot.val() || 0;
+        document.getElementById('counter').innerText = totalClicks;
     });
 }
 
@@ -318,20 +318,29 @@ function handleClick(event) {
     setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
 
     const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
     get(userEnergyRef).then((snapshot) => {
         const energy = snapshot.val();
         if (energy > 0) {
             const newEnergy = energy - 1;
             set(userEnergyRef, newEnergy);
 
-            // Получаем значение clicks и отображаем его
-            const userClicksRef = ref(database, `users/${userId}/clicks`);
             get(userClicksRef).then((snapshot) => {
                 const clicks = snapshot.val() || 0;
                 
                 // Отображаем значение clicks в floating-text
                 createFloatingText(x, y, clicks);
             });
+
+            // Увеличиваем и обновляем значение totalClicks
+            get(userTotalClicksRef).then((snapshot) => {
+                const totalClicks = snapshot.val() || 0;
+                const newTotalClicks = totalClicks + 1;
+                set(userTotalClicksRef, newTotalClicks);
+            });
+
         } else {
             createFloatingText(x, y, 'No Energy');
         }
