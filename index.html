@@ -156,7 +156,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -172,7 +172,6 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Регистрация Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
                 .then((registration) => {
@@ -216,7 +215,6 @@
 
             const userEnergyRef = ref(database, `users/${userId}/energy`);
             const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-            const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
             onValue(userEnergyRef, (snapshot) => {
                 const energy = snapshot.val();
@@ -225,79 +223,55 @@
 
             onValue(userMaxEnergyRef, (snapshot) => {
                 const maxEnergy = snapshot.val();
-                document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
-            });
-
-            onValue(userTotalClicksRef, (snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                document.getElementById('counter').innerText = totalClicks;
-            });
-        }
-
-        window.onload = function() {
-            userId = getParameterByName('userId');
-            if (!userId) {
-                userId = getCookie('userId');
-                if (!userId) {
-                    userId = prompt('Enter your user ID:');
-                    setCookie('userId', userId, 7);
+                if (maxEnergy !== undefined) {
+                    document.getElementById('energy-counter').innerText = `Energy: ${energy} / ${maxEnergy}`;
                 }
-            }
-            updateLocalEnergy();
-        };
-
-        function createFloatingText(x, y, text) {
-            const floatingText = document.createElement('div');
-            floatingText.className = 'floating-text';
-            floatingText.style.left = `${x}px`;
-            floatingText.style.top = `${y}px`;
-            floatingText.innerText = text;
-            document.body.appendChild(floatingText);
-
-            setTimeout(() => {
-                floatingText.remove();
-            }, 1000);
+            });
         }
 
-        function handleClick(event) {
+        document.getElementById('button').addEventListener('click', () => {
             if (!userId) return;
 
-            const x = event.clientX;
-            const y = event.clientY;
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-            // Отправка сообщения в Service Worker
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'HANDLE_CLICK',
-                    x,
-                    y,
-                    userId
-                });
-            }
+            get(userEnergyRef).then((snapshot) => {
+                let currentEnergy = snapshot.val() || 0;
+                
+                if (currentEnergy > 0) {
+                    currentEnergy--;
+                    set(userEnergyRef, currentEnergy);
 
-            // Локальная обработка кликов
-            const energyRef = ref(database, `users/${userId}/energy`);
-            get(energyRef).then((snapshot) => {
-                const energy = snapshot.val() || 0;
-                if (energy > 0) {
-                    // Обновление кликов
-                    const totalClicksRef = ref(database, `users/${userId}/totalClicks`);
-                    get(totalClicksRef).then((snapshot) => {
-                        const totalClicks = (snapshot.val() || 0) + 1;
-                        set(totalClicksRef, totalClicks);
-                        createFloatingText(x, y, '+1 Click');
-                        updateLocalEnergy(); // Обновление отображения энергии и кликов
+                    // Update the displayed energy
+                    document.getElementById('energy-counter').innerText = `Energy: ${currentEnergy}`;
+
+                    // Fetch maxEnergy to ensure energy does not exceed max
+                    get(userMaxEnergyRef).then((snapshot) => {
+                        const maxEnergy = snapshot.val();
+                        if (currentEnergy > maxEnergy) {
+                            set(userEnergyRef, maxEnergy);
+                        }
                     });
-
-                    // Уменьшение энергии
-                    set(energyRef, energy - 1);
-                } else {
-                    alert('Not enough energy!');
                 }
             });
+        });
+
+        function init() {
+            userId = getParameterByName('userId');
+            if (userId) {
+                setCookie('userId', userId, 1);
+                updateLocalEnergy();
+            } else {
+                userId = getCookie('userId');
+                if (userId) {
+                    updateLocalEnergy();
+                } else {
+                    console.log('User ID not found');
+                }
+            }
         }
 
-        document.getElementById('button').addEventListener('click', handleClick);
+        init();
     </script>
 </body>
 </html>
