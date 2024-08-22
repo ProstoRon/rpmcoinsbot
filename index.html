@@ -233,121 +233,78 @@ function updateLocalEnergy() {
         document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
     });
 
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').dataset.maxEnergy = maxEnergy;
-    });
-
     onValue(userTotalClicksRef, (snapshot) => {
         const clicks = snapshot.val();
         document.getElementById('counter').innerText = clicks;
     });
-}
 
-function calculateAndAddEnergy() {
-    const lastVisitTime = getCookie('lastVisitTime');
-    const currentTime = Date.now();
+    // Проверка времени последнего визита
+    const lastVisit = getCookie('lastVisit');
+    const currentTime = new Date().getTime();
 
-    if (lastVisitTime) {
-        const elapsedTime = currentTime - lastVisitTime;
-        const energyToAdd = Math.floor(elapsedTime / 2000);
-
-        get(ref(database, `users/${userId}/energy`)).then((snapshot) => {
-            let currentEnergy = snapshot.val() || 0;
-            get(ref(database, `users/${userId}/maxEnergy`)).then((maxSnapshot) => {
-                const maxEnergy = maxSnapshot.val() || 100;
-                currentEnergy = Math.min(currentEnergy + energyToAdd, maxEnergy);
-
-                set(ref(database, `users/${userId}/energy`), currentEnergy);
-                setCookie('lastVisitTime', currentTime, 365);
+    if (lastVisit) {
+        const elapsedSeconds = Math.floor((currentTime - lastVisit) / 1000);
+        get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+            const maxEnergy = maxEnergySnapshot.val();
+            get(userEnergyRef).then((energySnapshot) => {
+                let currentEnergy = energySnapshot.val();
+                currentEnergy = Math.min(currentEnergy + Math.floor(elapsedSeconds / 2), maxEnergy);
+                set(userEnergyRef, currentEnergy);
             });
         });
-    } else {
-        setCookie('lastVisitTime', currentTime, 365);
     }
+    setCookie('lastVisit', currentTime, 7);
 }
 
-function incrementEnergy() {
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    get(userEnergyRef).then((snapshot) => {
-        let energy = snapshot.val() || 0;
-        const maxEnergy = parseInt(document.getElementById('energy-counter').dataset.maxEnergy);
+document.addEventListener('DOMContentLoaded', () => {
+    userId = getParameterByName('id');
+    if (userId) {
+        const userRef = ref(database, `users/${userId}`);
+        get(userRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                updateLocalEnergy();
+            } else {
+                // Обработка, если пользователь не существует
+                console.log('User does not exist.');
+            }
+        });
+    }
 
-        if (energy < maxEnergy) {
-            energy++;
-            set(userEnergyRef, energy);
-        }
+    const button = document.getElementById('button');
+    button.addEventListener('click', () => {
+        const clicksRef = ref(database, `users/${userId}/clicks`);
+        const energyRef = ref(database, `users/${userId}/energy`);
+
+        get(energyRef).then((energySnapshot) => {
+            let currentEnergy = energySnapshot.val();
+            if (currentEnergy > 0) {
+                get(clicksRef).then((clicksSnapshot) => {
+                    const clicks = clicksSnapshot.val() + 1;
+                    set(clicksRef, clicks);
+                    document.getElementById('counter').innerText = clicks;
+                });
+
+                set(energyRef, currentEnergy - 1);
+            }
+        });
     });
-}
 
-function handleClick() {
-    if (!userId) return;
+    setInterval(() => {
+        if (userId) {
+            const energyRef = ref(database, `users/${userId}/energy`);
+            const maxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-
-    get(userEnergyRef).then((energySnapshot) => {
-        let energy = energySnapshot.val() || 0;
-
-        if (energy > 0) {
-            energy--;
-            set(userEnergyRef, energy);
-
-            get(userClicksRef).then((clicksSnapshot) => {
-                let clicks = clicksSnapshot.val() || 0;
-                clicks++;
-                set(userClicksRef, clicks);
-
-                get(userTotalClicksRef).then((totalClicksSnapshot) => {
-                    let totalClicks = totalClicksSnapshot.val() || 0;
-                    totalClicks++;
-                    set(userTotalClicksRef, totalClicks);
-
-                    displayFloatingText("+1 Click", "#fff");
-                    updateLocalEnergy();
+            get(maxEnergyRef).then((maxEnergySnapshot) => {
+                const maxEnergy = maxEnergySnapshot.val();
+                get(energyRef).then((energySnapshot) => {
+                    let currentEnergy = energySnapshot.val();
+                    if (currentEnergy < maxEnergy) {
+                        set(energyRef, currentEnergy + 1);
+                    }
                 });
             });
-        } else {
-            displayFloatingText("No energy!", "#ff0000");
         }
-    });
-}
-
-function displayFloatingText(text, color) {
-    const floatingText = document.createElement("div");
-    floatingText.className = "floating-text";
-    floatingText.innerText = text;
-    floatingText.style.color = color;
-    document.body.appendChild(floatingText);
-
-    const buttonRect = document.getElementById("button").getBoundingClientRect();
-    floatingText.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-    floatingText.style.top = `${buttonRect.top}px`;
-
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    userId = getParameterByName('user_id');
-    if (userId) {
-        calculateAndAddEnergy();
-        updateLocalEnergy();
-        energyInterval = setInterval(incrementEnergy, 2000);
-    }
-
-    const button = document.getElementById("button");
-    button.addEventListener("click", handleClick);
-    button.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        button.classList.add('animated');
-        handleClick();
-    });
-    button.addEventListener("touchend", () => {
-        button.classList.remove('animated');
-    });
+    }, 2000); // 1 ед. энергии каждые 2 секунды
 });
 </script>
 </body>
