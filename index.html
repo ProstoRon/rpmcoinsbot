@@ -275,12 +275,12 @@ window.onload = function() {
     startEnergyRegeneration(); // Запуск восстановления энергии после загрузки страницы
 };
 
-function createFloatingText(x, y, text) {
+function createFloatingText(x, y, clicks) {
     const floatingText = document.createElement('div');
     floatingText.className = 'floating-text';
     floatingText.style.left = `${x}px`;
     floatingText.style.top = `${y}px`;
-    floatingText.innerText = text;
+    floatingText.innerText = `${clicks}`;
     document.body.appendChild(floatingText);
 
     setTimeout(() => {
@@ -323,13 +323,16 @@ function handleClick(event) {
         if (energy > 0) {
             const newEnergy = energy - 1;
             set(userEnergyRef, newEnergy);
-            createFloatingText(x, y, '+1');
 
             // Обновляем счетчик кликов
             const userClicksRef = ref(database, `users/${userId}/totalClicks`);
             get(userClicksRef).then((snapshot) => {
                 const totalClicks = snapshot.val() || 0;
-                set(userClicksRef, totalClicks + 1);
+                const newClicks = totalClicks + 1;
+                set(userClicksRef, newClicks);
+                
+                // Отображаем новое значение кликов в floating-text
+                createFloatingText(x, y, `+${newClicks}`);
             });
         } else {
             createFloatingText(x, y, 'No Energy');
@@ -338,6 +341,6 @@ function handleClick(event) {
 }
 
 document.getElementById('button').addEventListener('click', handleClick);
-  </script>
+</script>
 </body>
 </html>
