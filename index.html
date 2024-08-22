@@ -3,7 +3,8 @@
 <head>
     <title>RPMcoinbot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
+    <style>
         /* Общие стили для всех устройств */
         body {
             display: flex;
@@ -162,20 +163,20 @@
                transform: scale(0.9);
             }
         }
-            
-   <style>
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
-        <div class="styled-rectangle"></div>
+        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
+    <!-- Подключаем Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
+import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyB2FxqryBDE7Q0SB-pt8v23Tpusg2xAFHU",
@@ -194,7 +195,11 @@ const database = getDatabase(app);
 let userId = null;
 let energyInterval;
 
-// Функция для установки куки
+function getParameterByName(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
 function setCookie(name, value, days) {
     let expires = "";
     if (days) {
@@ -205,7 +210,6 @@ function setCookie(name, value, days) {
     document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
-// Функция для получения куки
 function getCookie(name) {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
@@ -217,46 +221,134 @@ function getCookie(name) {
     return null;
 }
 
-// Функция для обновления энергии пользователя при заходе на сайт
-function updateEnergyBasedOnLastVisit() {
-    const lastVisit = getCookie('lastVisit');
-    const currentTime = new Date().getTime();
+function updateLocalEnergy() {
+    if (!userId) return;
 
-    if (lastVisit) {
-        const timeElapsed = (currentTime - parseInt(lastVisit)) / 1000; // Время в секундах
-        const energyToAdd = Math.floor(timeElapsed / 2); // 1 энергия каждые 2 секунды
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    onValue(userEnergyRef, (snapshot) => {
+        const energy = snapshot.val();
+        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+    });
 
-        get(userEnergyRef).then((energySnapshot) => {
-            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-                let energy = energySnapshot.val();
-                const maxEnergy = maxEnergySnapshot.val();
-                energy = Math.min(energy + energyToAdd, maxEnergy); // Убедитесь, что энергия не превышает maxEnergy
-                set(userEnergyRef, energy);
-                document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-            });
-        });
-    }
+    onValue(userMaxEnergyRef, (snapshot) => {
+        const maxEnergy = snapshot.val();
+        document.getElementById('energy-counter').dataset.maxEnergy = maxEnergy;
+    });
 
-    setCookie('lastVisit', currentTime, 7); // Обновляем куки с текущим временем
+    onValue(userTotalClicksRef, (snapshot) => {
+        const clicks = snapshot.val();
+        document.getElementById('counter').innerText = clicks;
+    });
 }
 
-window.onload = function() {
-    userId = getParameterByName('userId');
-    if (!userId) {
-        userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
-        }
-    }
-    updateEnergyBasedOnLastVisit(); // Обновление энергии на основе времени последнего посещения
-    startEnergyRegeneration(); // Запуск восстановления энергии после загрузки страницы
-};
+function calculateAndAddEnergy() {
+    const lastVisitTime = getCookie('lastVisitTime');
+    const currentTime = Date.now();
 
-// Остальная часть вашего кода остаётся неизменной
+    if (lastVisitTime) {
+        const elapsedTime = currentTime - lastVisitTime;
+        const energyToAdd = Math.floor(elapsedTime / 2000);
+
+        get(ref(database, `users/${userId}/energy`)).then((snapshot) => {
+            let currentEnergy = snapshot.val() || 0;
+            get(ref(database, `users/${userId}/maxEnergy`)).then((maxSnapshot) => {
+                const maxEnergy = maxSnapshot.val() || 100;
+                currentEnergy = Math.min(currentEnergy + energyToAdd, maxEnergy);
+
+                set(ref(database, `users/${userId}/energy`), currentEnergy);
+                setCookie('lastVisitTime', currentTime, 365);
+            });
+        });
+    } else {
+        setCookie('lastVisitTime', currentTime, 365);
+    }
+}
+
+function incrementEnergy() {
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    get(userEnergyRef).then((snapshot) => {
+        let energy = snapshot.val() || 0;
+        const maxEnergy = parseInt(document.getElementById('energy-counter').dataset.maxEnergy);
+
+        if (energy < maxEnergy) {
+            energy++;
+            set(userEnergyRef, energy);
+        }
+    });
+}
+
+function handleClick() {
+    if (!userId) return;
+
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+
+    get(userEnergyRef).then((energySnapshot) => {
+        let energy = energySnapshot.val() || 0;
+
+        if (energy > 0) {
+            energy--;
+            set(userEnergyRef, energy);
+
+            get(userClicksRef).then((clicksSnapshot) => {
+                let clicks = clicksSnapshot.val() || 0;
+                clicks++;
+                set(userClicksRef, clicks);
+
+                get(userTotalClicksRef).then((totalClicksSnapshot) => {
+                    let totalClicks = totalClicksSnapshot.val() || 0;
+                    totalClicks++;
+                    set(userTotalClicksRef, totalClicks);
+
+                    displayFloatingText("+1 Click", "#fff");
+                    updateLocalEnergy();
+                });
+            });
+        } else {
+            displayFloatingText("No energy!", "#ff0000");
+        }
+    });
+}
+
+function displayFloatingText(text, color) {
+    const floatingText = document.createElement("div");
+    floatingText.className = "floating-text";
+    floatingText.innerText = text;
+    floatingText.style.color = color;
+    document.body.appendChild(floatingText);
+
+    const buttonRect = document.getElementById("button").getBoundingClientRect();
+    floatingText.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
+    floatingText.style.top = `${buttonRect.top}px`;
+
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    userId = getParameterByName('user_id');
+    if (userId) {
+        calculateAndAddEnergy();
+        updateLocalEnergy();
+        energyInterval = setInterval(incrementEnergy, 2000);
+    }
+
+    const button = document.getElementById("button");
+    button.addEventListener("click", handleClick);
+    button.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        button.classList.add('animated');
+        handleClick();
+    });
+    button.addEventListener("touchend", () => {
+        button.classList.remove('animated');
+    });
+});
 </script>
 </body>
 </html>
