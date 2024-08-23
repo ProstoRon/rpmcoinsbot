@@ -264,6 +264,52 @@ function createUserIfNeeded(userId) {
     });
 }
 
+function handleButtonClick() {
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
+    get(userEnergyRef).then((snapshot) => {
+        const energy = snapshot.val();
+        if (energy > 0) {
+            set(userEnergyRef, energy - 1);
+
+            get(userTotalClicksRef).then((clicksSnapshot) => {
+                const totalClicks = clicksSnapshot.val() || 0;
+                set(userTotalClicksRef, totalClicks + 1).then(() => {
+                    const floatingText = document.createElement("div");
+                    floatingText.className = "floating-text";
+                    floatingText.textContent = "+1";
+                    button.appendChild(floatingText);
+
+                    setTimeout(() => {
+                        button.removeChild(floatingText);
+                    }, 1000);
+
+                    updateLocalEnergy();
+                });
+            });
+        }
+    });
+}
+
+function startEnergyRegeneration() {
+    energyInterval = setInterval(() => {
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+        get(userEnergyRef).then((snapshot) => {
+            const currentEnergy = snapshot.val();
+            get(userMaxEnergyRef).then((maxSnapshot) => {
+                const maxEnergy = maxSnapshot.val();
+                if (currentEnergy < maxEnergy) {
+                    set(userEnergyRef, currentEnergy + 1);
+                    updateLocalEnergy();
+                }
+            });
+        });
+    }, 2000);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     userId = getCookie("userId");
 
@@ -281,52 +327,9 @@ document.addEventListener("DOMContentLoaded", () => {
     createUserIfNeeded(userId);
 
     const button = document.getElementById('button');
+    button.addEventListener("click", handleButtonClick);
 
-    button.addEventListener("click", () => {
-        if (energyInterval) clearInterval(energyInterval);
-
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-        get(userEnergyRef).then((snapshot) => {
-            const energy = snapshot.val();
-            if (energy > 0) {
-                set(userEnergyRef, energy - 1);
-
-                get(userTotalClicksRef).then((clicksSnapshot) => {
-                    const totalClicks = clicksSnapshot.val() || 0;
-                    set(userTotalClicksRef, totalClicks + 1).then(() => {
-                        const floatingText = document.createElement("div");
-                        floatingText.className = "floating-text";
-                        floatingText.textContent = "+1";
-                        button.appendChild(floatingText);
-
-                        setTimeout(() => {
-                            button.removeChild(floatingText);
-                        }, 1000);
-
-                        updateLocalEnergy();
-                    });
-                });
-            }
-        });
-    });
-
-    energyInterval = setInterval(() => {
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-        get(userEnergyRef).then((snapshot) => {
-            const currentEnergy = snapshot.val();
-            get(userMaxEnergyRef).then((maxSnapshot) => {
-                const maxEnergy = maxSnapshot.val();
-                if (currentEnergy < maxEnergy) {
-                    set(userEnergyRef, currentEnergy + 1);
-                    updateLocalEnergy();
-                }
-            });
-        });
-    }, 2000);
+    startEnergyRegeneration();
 });
 </script>
 </body>
