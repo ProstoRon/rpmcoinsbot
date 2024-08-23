@@ -288,6 +288,38 @@ function createFloatingText(x, y, clicks) {
     }, 1000);
 }
 
+    
+function calculateAndUpdateEnergy() {
+    if (!userId) return;
+
+    const lastVisit = getLastVisitTime();
+    const now = Date.now();
+
+    if (lastVisit) {
+        const timeDifference = now - lastVisit;
+        const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
+
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+        get(userEnergyRef).then((energySnapshot) => {
+            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+                const currentEnergy = energySnapshot.val();
+                const maxEnergy = maxEnergySnapshot.val();
+
+                const newEnergy = Math.min(currentEnergy + energyRestored, maxEnergy);
+                set(userEnergyRef, newEnergy);
+
+                // Update the last visit time
+                setLastVisitTime();
+            });
+        });
+    } else {
+        // If no last visit time, set it to now
+        setLastVisitTime();
+    }
+}
+
 function handleClick(event) {
     if (!userId) return;
 
