@@ -194,7 +194,6 @@ const database = getDatabase(app);
 
 let userId = null;
 let energyInterval;
-const energyRegenerationRate = 2000; // Энергия восстанавливается каждые 2 секунды
 
 function getParameterByName(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -260,35 +259,41 @@ function startEnergyRegeneration() {
                 }
             });
         });
-    }, energyRegenerationRate); // Восстановление энергии каждые 2 секунды
+    }, 2000); // Восстановление энергии каждые 2 секунды
 }
 
 function updateEnergyBasedOnLastVisit() {
-    if (!userId) return;
-
-    const lastVisit = getCookie('lastVisit');
+    const lastVisitCookie = getCookie('lastVisit');
     const now = Date.now();
-
-    if (lastVisit) {
-        const timeElapsed = now - parseInt(lastVisit, 10);
-        const energyGained = Math.floor(timeElapsed / energyRegenerationRate);
-
-        if (energyGained > 0) {
-            const userEnergyRef = ref(database, `users/${userId}/energy`);
-            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-            get(userEnergyRef).then((energySnapshot) => {
-                get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-                    const energy = energySnapshot.val();
-                    const maxEnergy = maxEnergySnapshot.val();
-
-                    const newEnergy = Math.min(energy + energyGained, maxEnergy);
-                    set(userEnergyRef, newEnergy);
-                });
-            });
-        }
+    
+    if (!lastVisitCookie) {
+        setCookie('lastVisit', now, 7); // Устанавливаем текущую дату как дату последнего посещения
+        return;
     }
-    setCookie('lastVisit', now, 7); // Обновление времени последнего посещения
+
+    const lastVisitTime = parseInt(lastVisitCookie, 10);
+    const timeElapsed = now - lastVisitTime;
+
+    // Период восстановления энергии
+    const recoveryInterval = 2000; // 2 секунды
+    const maxEnergy = 100; // Установите значение maxEnergy, если оно известно
+    const energyRecoveryRate = 1; // Энергия восстанавливается на 1 единицу за интервал
+
+    const energyUnitsRecovered = Math.floor(timeElapsed / recoveryInterval);
+
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+    get(userEnergyRef).then((energySnapshot) => {
+        get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+            const energy = energySnapshot.val();
+            const maxEnergy = maxEnergySnapshot.val();
+
+            const newEnergy = Math.min(energy + energyUnitsRecovered, maxEnergy);
+            set(userEnergyRef, newEnergy);
+            setCookie('lastVisit', now, 7); // Обновляем дату последнего посещения
+        });
+    });
 }
 
 window.onload = function() {
@@ -300,7 +305,7 @@ window.onload = function() {
             setCookie('userId', userId, 7);
         }
     }
-    updateEnergyBasedOnLastVisit();
+    updateEnergyBasedOnLastVisit(); // Обновляем энергию на основе времени последнего посещения
     updateLocalEnergy();
     startEnergyRegeneration(); // Запуск восстановления энергии после загрузки страницы
 };
