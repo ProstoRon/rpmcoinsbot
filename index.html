@@ -257,7 +257,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 5000); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
@@ -282,6 +282,8 @@ function calculateAndUpdateEnergy() {
 
 function startEnergyRegeneration() {
     energyInterval = setInterval(() => {
+        if (!userId) return;
+
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
@@ -341,9 +343,7 @@ async function handleClick(event) {
     if (!userId) return;
 
     // Vibration
-    if (navigator.vibrate) {
-        navigator.vibrate(100); // Vibrate for 100 milliseconds
-    }
+    vibrate(5); // Vibrate for 100 milliseconds
 
     const touches = event.touches; // Get all touches
     for (let i = 0; i < touches.length; i++) {
@@ -352,8 +352,6 @@ async function handleClick(event) {
         const y = touch.clientY;
 
         const button = document.getElementById('button');
-        vibrate(20);
-        // Determine button size and center
         const rect = button.getBoundingClientRect();
         const buttonCenterX = rect.left + rect.width / 2;
         const buttonCenterY = rect.top + rect.height / 2;
@@ -405,8 +403,12 @@ async function handleClick(event) {
             console.error('Error handling click:', error);
         }
     }
+
+    // Prevent default action to avoid potential issues with multi-touch
+    event.preventDefault();
 }
 
+// Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
 </script>
 </body>
