@@ -257,7 +257,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 5000); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 3300); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
@@ -297,7 +297,7 @@ function startEnergyRegeneration() {
                 }
             });
         });
-    }, 2000); // Energy regeneration every 2 seconds
+    }, 3300); // Energy regeneration every 2 seconds
 }
 
 window.onload = function() {
