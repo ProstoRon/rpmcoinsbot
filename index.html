@@ -305,13 +305,17 @@ function startEnergyRegeneration() {
 
 window.onload = function() {
     userId = getParameterByName('source');
-    if (!userId) {
+    if (userId) {
+        setCookie('userId', userId, 7); // Store the user ID in a cookie
+    } else {
         userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
-        }
     }
+
+    if (!userId) {
+        console.error('No user ID provided or found.');
+        return;
+    }
+
     calculateAndUpdateEnergy(); // Calculate and update energy based on offline time
     updateLocalEnergy();
     startEnergyRegeneration(); // Start energy regeneration after page load
