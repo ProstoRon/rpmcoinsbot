@@ -40,21 +40,20 @@ body {
         .button {
             width: 400px; 
             height: 400px; 
-            background-image: url('https://i.imgur.com/5Yn6qnN.png'); 
             background-size: cover; 
             background-position: center; 
             border: none;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
             margin-bottom: 20px;
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
             transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
-            z-index: 1;
+            background-color: #3498db; /* Синий цвет */
+            pointer-events: none;
         }
 
         .button.animated {
@@ -101,7 +100,6 @@ body {
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
-            z-index: 2;
         }
 
         @keyframes floatUp {
@@ -130,7 +128,7 @@ body {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
-                top: -100px;
+                top: 50px;
                 left: 10px;
             }
             
@@ -236,6 +234,7 @@ function updateLocalEnergy() {
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
         if (energy !== null) {
+            // Update energy display with both current and max energy
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
                 const maxEnergy = maxEnergySnapshot.val();
                 document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
@@ -258,7 +257,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
@@ -294,10 +293,7 @@ function startEnergyRegeneration() {
                 const maxEnergy = maxEnergySnapshot.val();
 
                 if (energy < maxEnergy) {
-                    const newEnergy = Math.min(energy + 1, maxEnergy);
-                    set(userEnergyRef, newEnergy);
-                    // Update UI
-                    document.getElementById('energy-counter').innerText = `${newEnergy}/${maxEnergy}`;
+                    set(userEnergyRef, energy + 1);
                 }
             });
         });
@@ -402,8 +398,8 @@ async function handleClick(event) {
                 document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
 
                 // Update the database asynchronously
-                await set(userEnergyRef, newEnergy);
-                await set(userTotalClicksRef, totalClicks + 1);
+                set(userEnergyRef, newEnergy);
+                set(userTotalClicksRef, totalClicks + 1);
             } else {
                 createFloatingText(x, y, 'No Energy');
             }
