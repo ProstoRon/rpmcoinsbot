@@ -245,7 +245,7 @@ function updateLocalEnergy() {
             // Update energy display with both current and max energy
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
                 const maxEnergy = maxEnergySnapshot.val();
-                document.getElementById('energy-counter').innerText = `Energy: ${energy}/${maxEnergy}`;
+                document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
             });
         }
     });
