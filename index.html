@@ -347,10 +347,10 @@ function vibrate(duration) {
 async function handleClick(event) {
     if (!userId) return;
 
-    // Vibration
-    vibrate(5); // Vibrate for 100 milliseconds
+    // Вибрация
+    vibrate(5); // Вибрировать на 100 миллисекунд
 
-    const touches = event.touches; // Get all touches
+    const touches = event.touches; // Получить все касания
     for (let i = 0; i < touches.length; i++) {
         const touch = touches[i];
         const x = touch.clientX;
@@ -361,7 +361,7 @@ async function handleClick(event) {
         const buttonCenterX = rect.left + rect.width / 2;
         const buttonCenterY = rect.top + rect.height / 2;
 
-        // Calculate tilt
+        // Рассчитать наклон
         const deltaX = x - buttonCenterX;
         const deltaY = y - buttonCenterY;
         const tiltX = deltaX / 20;
@@ -369,14 +369,12 @@ async function handleClick(event) {
 
         button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
 
-        // Apply animation and reset transform after animation
+        // Применить анимацию и сбросить трансформацию после анимации
         button.classList.add('animated');
         setTimeout(() => {
             button.classList.remove('animated');
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }, 300);
-
-        setTimeout(() => button.classList.remove('animated'), 300);
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userClicksRef = ref(database, `users/${userId}/clicks`);
@@ -387,20 +385,24 @@ async function handleClick(event) {
             const energy = energySnapshot.val();
 
             if (energy > 0) {
+                // Немедленно обновляем UI до выполнения асинхронных операций
                 const newEnergy = energy - 1;
-                await set(userEnergyRef, newEnergy);
+                document.getElementById('energy-counter').innerText = `${newEnergy}/${await get(ref(database, `users/${userId}/maxEnergy`)).val()}`;
 
-                const clicksSnapshot = await get(userClicksRef);
-                const clicks = clicksSnapshot.val() || 0;
+                // Создаем плавающее текстовое отображение кликов
+                createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
 
-                // Display clicks in floating-text
-                createFloatingText(x, y, clicks);
-
-                // Increment and update totalClicks
+                // Увеличиваем и обновляем общее количество кликов
                 const totalClicksSnapshot = await get(userTotalClicksRef);
                 const totalClicks = totalClicksSnapshot.val() || 0;
                 const newTotalClicks = totalClicks + 1;
-                await set(userTotalClicksRef, newTotalClicks);
+
+                // Немедленно обновляем UI для общего количества кликов
+                document.getElementById('counter').innerText = newTotalClicks.toLocaleString();
+
+                // Асинхронное обновление базы данных
+                await set(userEnergyRef, newEnergy).catch(error => console.error('Error updating energy:', error));
+                await set(userTotalClicksRef, newTotalClicks).catch(error => console.error('Error updating total clicks:', error));
             } else {
                 createFloatingText(x, y, 'No Energy');
             }
@@ -409,9 +411,10 @@ async function handleClick(event) {
         }
     }
 
-    // Prevent default action to avoid potential issues with multi-touch
+    // Предотвращаем стандартное действие, чтобы избежать возможных проблем с мульти-тач
     event.preventDefault();
 }
+
 
 // Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
