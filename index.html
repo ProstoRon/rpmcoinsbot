@@ -262,7 +262,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
