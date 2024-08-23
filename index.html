@@ -83,20 +83,19 @@
             }
         }
 
-         #energy-counter {
-    font-size: 18px;
-}
+        #energy-counter {
+            font-size: 18px;
+        }
 
-.energy {
-    font-size: 20px;
-    font-weight: bold;
-}
+        .energy {
+            font-size: 20px;
+            font-weight: bold;
+        }
 
-.max-energy {
-    font-size: 16px;
-    color: blue;
-}
-
+        .max-energy {
+            font-size: 16px;
+            color: blue;
+        }
 
         .counter {
             font-size: 48px; 
@@ -198,212 +197,82 @@ const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 let userId = null;
-let energyInterval;
+let energyInterval = null;
 
-function getParameterByName(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-}
-
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
-}
-
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
-function getLastVisitTime() {
-    const lastVisit = getCookie('lastVisit');
-    return lastVisit ? parseInt(lastVisit, 10) : null;
-}
-
-function setLastVisitTime() {
-    const now = Date.now();
-    setCookie('lastVisit', now, 7);
-}
-
-function updateLocalEnergy() {
-    if (!userId) return;
-
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    // Fetch energy and maxEnergy
-    get(userEnergyRef).then((energySnapshot) => {
-        get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-            const energy = energySnapshot.val();
-            const maxEnergy = maxEnergySnapshot.val();
-            
-            // Update the energy counter with styled maximum energy
-            document.getElementById('energy-counter').innerHTML = `
-                <span class="energy">${energy}</span> / 
-                <span class="max-energy">${maxEnergy}</span>
-            `;
-        });
-    });
-
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
-    });
-}
-
-
-function calculateAndUpdateEnergy() {
-    if (!userId) return;
-
-    const lastVisit = getLastVisitTime();
-    const now = Date.now();
-
-    if (lastVisit) {
-        const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
-
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-        get(userEnergyRef).then((energySnapshot) => {
-            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-                const currentEnergy = energySnapshot.val();
-                const maxEnergy = maxEnergySnapshot.val();
-
-                const newEnergy = Math.min(currentEnergy + energyRestored, maxEnergy);
-                set(userEnergyRef, newEnergy);
-
-                // Update the last visit time
-                setLastVisitTime();
-            });
-        });
-    } else {
-        // If no last visit time, set it to now
-        setLastVisitTime();
-    }
-}
-
-function startEnergyRegeneration() {
-    energyInterval = setInterval(() => {
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-        get(userEnergyRef).then((energySnapshot) => {
-            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-                const energy = energySnapshot.val();
-                const maxEnergy = maxEnergySnapshot.val();
-
-                if (energy < maxEnergy) {
-                    set(userEnergyRef, energy + 1);
-                }
-            });
-        });
-    }, 2000); // Energy regeneration every 2 seconds
-}
-
-window.onload = function() {
-    userId = getParameterByName('source'); // Get user ID from URL parameter
-    if (userId) {
-        setCookie('userId', userId, 7); // Store the user ID in a cookie
-    } else {
-        userId = getCookie('userId');
-    }
-
-    if (!userId) {
-        console.error('No user ID provided or found.');
-        return;
-    }
-
-    calculateAndUpdateEnergy(); // Calculate and update energy based on offline time
-    updateLocalEnergy();
-    startEnergyRegeneration(); // Start energy regeneration after page load
-};
-
-function createFloatingText(x, y, clicks) {
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
-    floatingText.style.left = `${x}px`;
-    floatingText.style.top = `${y}px`;
-    floatingText.innerText = `+${clicks}`;
-    document.body.appendChild(floatingText);
-
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-function handleClick(event) {
-    if (!userId) return;
-
-    const x = event.clientX;
-    const y = event.clientY;
+document.addEventListener('DOMContentLoaded', () => {
     const button = document.getElementById('button');
+    const counter = document.getElementById('counter');
+    const energyCounter = document.getElementById('energy-counter');
 
-    // Determine button size and center
-    const rect = button.getBoundingClientRect();
-    const buttonCenterX = rect.left + rect.width / 2;
-    const buttonCenterY = rect.top + rect.height / 2;
-
-    // Calculate tilt
-    const deltaX = x - buttonCenterX;
-    const deltaY = y - buttonCenterY;
-    const tiltX = deltaX / 20;
-    const tiltY = -deltaY / 20;
-
-    button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
-
-    // Apply animation and reset transform after animation
-    button.classList.add('animated');
-    setTimeout(() => {
-        button.classList.remove('animated');
-        button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    }, 300);
-
-    setTimeout(() => button.classList.remove('animated'), 300);
-
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            set(userEnergyRef, newEnergy);
-
-            get(userClicksRef).then((snapshot) => {
-                const clicks = snapshot.val() || 0;
-
-                // Display clicks in floating-text
-                createFloatingText(x, y, clicks);
-            });
-
-            // Increment and update totalClicks
-            get(userTotalClicksRef).then((snapshot) => {
-                const totalClicks = snapshot.val() || 0;
-                const newTotalClicks = totalClicks + 1;
-                set(userTotalClicksRef, newTotalClicks);
-            });
-
-        } else {
-            createFloatingText(x, y, 'No Energy');
+    button.addEventListener('click', () => {
+        if (userId !== null) {
+            handleButtonClick();
         }
     });
-}
 
-document.getElementById('button').addEventListener('click', handleClick);
+    function handleButtonClick() {
+        const userEnergyRef = ref(database, `users/${userId}/Energy`);
+        get(userEnergyRef).then((snapshot) => {
+            const energy = snapshot.val();
+            if (energy !== null && energy > 0) {
+                set(userEnergyRef, energy - 1);
+                // Update counter and energy display
+                updateCounter();
+            }
+        }).catch(error => {
+            console.error('Error fetching energy data:', error);
+        });
+    }
+
+    function updateCounter() {
+        const userClicksRef = ref(database, `users/${userId}/clicks`);
+        get(userClicksRef).then((snapshot) => {
+            const clicks = snapshot.val();
+            if (clicks !== null) {
+                counter.textContent = clicks;
+            }
+        }).catch(error => {
+            console.error('Error fetching clicks data:', error);
+        });
+    }
+
+    function startEnergyRegeneration() {
+        if (energyInterval) {
+            clearInterval(energyInterval);
+        }
+        energyInterval = setInterval(() => {
+            const userEnergyRef = ref(database, `users/${userId}/Energy`);
+            get(userEnergyRef).then((snapshot) => {
+                let energy = snapshot.val();
+                if (energy !== null) {
+                    const maxEnergy = 100; // Replace with actual maxEnergy value
+                    if (energy < maxEnergy) {
+                        energy++;
+                        set(userEnergyRef, energy);
+                        energyCounter.textContent = energy;
+                    }
+                }
+            }).catch(error => {
+                console.error('Error fetching energy data:', error);
+            });
+        }, 2000);
+    }
+
+    // Initialize user
+    const cookieUserId = getCookie("userId");
+    if (cookieUserId) {
+        userId = cookieUserId;
+        startEnergyRegeneration();
+    } else {
+        // Redirect to registration page or show registration form
+    }
+});
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
 </script>
 </body>
 </html>
