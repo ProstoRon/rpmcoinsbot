@@ -185,7 +185,7 @@ const firebaseConfig = {
     projectId: "rpmcoins-48e4f",
     storageBucket: "rpmcoins-48e4f.appspot.com",
     messagingSenderId: "764805793058",
-    appId: "1:764805793058:web:83ff3c1114bbd0fbd9d17b",
+    appId: "1:764805793058:web:83ff3c1114bbd9d17b",
     measurementId: "G-S2PRPR80F5"
 };
 
@@ -221,115 +221,90 @@ function getCookie(name) {
     return null;
 }
 
-function updateLocalEnergy() {
-    if (!userId) return;
-
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
-    });
-
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
-    });
-
-    onValue(userTotalClicksRef, (snapshot) => {
-        const totalClicks = snapshot.val();
-        document.getElementById('counter').innerText = totalClicks;
-    });
+function saveLastVisitTime() {
+    const currentTime = new Date().getTime();
+    setCookie("lastVisitTime", currentTime, 7);
 }
 
-function createUserIfNeeded(userId) {
-    const userRef = ref(database, `users/${userId}`);
-
-    get(userRef).then((snapshot) => {
-        if (!snapshot.exists()) {
-            set(userRef, {
-                energy: 100,
-                maxEnergy: 100,
-                totalClicks: 0,
-            }).then(() => {
-                updateLocalEnergy();
-            });
-        } else {
-            updateLocalEnergy();
-        }
-    }).catch((error) => {
-        console.error("Error checking/creating user:", error);
-    });
-}
-
-function handleButtonClick() {
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    get(userEnergyRef).then((snapshot) => {
-        const energy = snapshot.val();
-        if (energy > 0) {
-            set(userEnergyRef, energy - 1);
-
-            get(userTotalClicksRef).then((clicksSnapshot) => {
-                const totalClicks = clicksSnapshot.val() || 0;
-                set(userTotalClicksRef, totalClicks + 1).then(() => {
-                    const floatingText = document.createElement("div");
-                    floatingText.className = "floating-text";
-                    floatingText.textContent = "+1";
-                    button.appendChild(floatingText);
-
-                    setTimeout(() => {
-                        button.removeChild(floatingText);
-                    }, 1000);
-
-                    updateLocalEnergy();
-                });
-            });
-        }
-    });
-}
-
-function startEnergyRegeneration() {
-    energyInterval = setInterval(() => {
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-
-        get(userEnergyRef).then((snapshot) => {
-            const currentEnergy = snapshot.val();
-            get(userMaxEnergyRef).then((maxSnapshot) => {
-                const maxEnergy = maxSnapshot.val();
-                if (currentEnergy < maxEnergy) {
-                    set(userEnergyRef, currentEnergy + 1);
-                    updateLocalEnergy();
+function loadEnergyFromLastVisit() {
+    const lastVisitTime = getCookie("lastVisitTime");
+    if (lastVisitTime) {
+        const currentTime = new Date().getTime();
+        const timeElapsed = currentTime - lastVisitTime;
+        const energyToRegenerate = Math.floor(timeElapsed / 2000); // 1 energy every 2 seconds
+        if (energyToRegenerate > 0) {
+            const userRef = ref(database, `users/${userId}`);
+            get(userRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    let currentEnergy = snapshot.val().Energy || 0;
+                    const maxEnergy = snapshot.val().MaxEnergy || 0;
+                    currentEnergy = Math.min(currentEnergy + energyToRegenerate, maxEnergy);
+                    set(userRef, { ...snapshot.val(), Energy: currentEnergy });
+                    document.getElementById("energy-counter").innerText = `Energy: ${currentEnergy}`;
                 }
             });
-        });
-    }, 2000);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    userId = getCookie("userId");
-
-    if (!userId) {
-        const telegramId = getParameterByName("telegramId");
-        if (telegramId) {
-            userId = telegramId;
-            setCookie("userId", telegramId, 365);
-        } else {
-            window.location.href = "registration.html";
-            return;
         }
     }
+}
 
-    createUserIfNeeded(userId);
+window.addEventListener("DOMContentLoaded", async () => {
+    userId = getParameterByName('telegram_id');
+    if (!userId) {
+        alert("User ID not found.");
+        return;
+    }
 
-    const button = document.getElementById('button');
-    button.addEventListener("click", handleButtonClick);
+    loadEnergyFromLastVisit();
+    saveLastVisitTime();
 
-    startEnergyRegeneration();
+    const userRef = ref(database, `users/${userId}`);
+    onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            const currentEnergy = data.Energy || 0;
+            const maxEnergy = data.MaxEnergy || 0;
+            document.getElementById("energy-counter").innerText = `Energy: ${currentEnergy}`;
+        }
+    });
+
+    energyInterval = setInterval(() => {
+        get(userRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                let currentEnergy = snapshot.val().Energy || 0;
+                const maxEnergy = snapshot.val().MaxEnergy || 0;
+                if (currentEnergy < maxEnergy) {
+                    currentEnergy++;
+                    set(userRef, { ...snapshot.val(), Energy: currentEnergy });
+                }
+                document.getElementById("energy-counter").innerText = `Energy: ${currentEnergy}`;
+            }
+        });
+    }, 2000);
+});
+
+document.getElementById("button").addEventListener("click", () => {
+    const userRef = ref(database, `users/${userId}`);
+    get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            let currentEnergy = snapshot.val().Energy || 0;
+            let clicks = snapshot.val().clicks || 0;
+            if (currentEnergy > 0) {
+                currentEnergy--;
+                clicks++;
+                set(userRef, { ...snapshot.val(), Energy: currentEnergy, clicks: clicks });
+                const floatingText = document.createElement("div");
+                floatingText.className = "floating-text";
+                floatingText.innerText = "+1";
+                document.body.appendChild(floatingText);
+
+                setTimeout(() => {
+                    floatingText.remove();
+                }, 1000);
+            }
+            document.getElementById("energy-counter").innerText = `Energy: ${currentEnergy}`;
+            document.getElementById("counter").innerText = clicks;
+        }
+    });
 });
 </script>
 </body>
