@@ -304,7 +304,7 @@ function startEnergyRegeneration() {
 }
 
 window.onload = function() {
-    userId = getParameterByName('userid'); // Get user ID from URL parameter
+    userId = getParameterByName('source'); // Get user ID from URL parameter
     if (userId) {
         setCookie('userId', userId, 7); // Store the user ID in a cookie
     } else {
