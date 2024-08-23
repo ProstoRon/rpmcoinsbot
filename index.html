@@ -349,72 +349,67 @@ async function handleClick(event) {
 
     const touches = Array.from(event.changedTouches); // Convert TouchList to Array
 
-    // Process each touch
+    // Update UI immediately for each touch
     for (const touch of touches) {
         const x = touch.clientX;
         const y = touch.clientY;
 
-        // Immediate UI update for touch
-        updateUI(x, y);
+        const button = document.getElementById('button');
+        const rect = button.getBoundingClientRect();
+        const buttonCenterX = rect.left + rect.width / 2;
+        const buttonCenterY = rect.top + rect.height / 2;
 
-        // Asynchronous database update
+        // Calculate tilt
+        const deltaX = x - buttonCenterX;
+        const deltaY = y - buttonCenterY;
+        const tiltX = deltaX / 20;
+        const tiltY = -deltaY / 20;
+
+        button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
+
+        // Apply animation and reset transform after animation
+        button.classList.add('animated');
+        setTimeout(() => {
+            button.classList.remove('animated');
+            button.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        }, 300);
+
+        setTimeout(() => button.classList.remove('animated'), 300);
+
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userClicksRef = ref(database, `users/${userId}/clicks`);
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+
         try {
-            await updateDatabase();
-        } catch (error) {
-            console.error('Error updating database:', error);
-        }
-    }
-}
+            const energySnapshot = await get(userEnergyRef);
+            const energy = energySnapshot.val();
 
-function updateUI(x, y) {
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+            if (energy > 0) {
+                const newEnergy = energy - 1;
+                // Update UI immediately
+                document.getElementById('energy-counter').innerText = `${newEnergy}/${energySnapshot.val()}`;
 
-    get(userEnergyRef).then((energySnapshot) => {
-        const energy = energySnapshot.val();
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            document.getElementById('energy-counter').innerText = `${newEnergy}/${energySnapshot.val()}`;
-            
-            createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
+                // Create floating text
+                createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
 
-            get(userTotalClicksRef).then((totalClicksSnapshot) => {
+                // Increment and update totalClicks
+                const totalClicksSnapshot = await get(userTotalClicksRef);
                 const totalClicks = totalClicksSnapshot.val() || 0;
                 document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
-            });
-        } else {
-            createFloatingText(x, y, 'No Energy');
+
+                // Update the database asynchronously
+                set(userEnergyRef, newEnergy);
+                set(userTotalClicksRef, totalClicks + 1);
+            } else {
+                createFloatingText(x, y, 'No Energy');
+            }
+        } catch (error) {
+            console.error('Error handling click:', error);
         }
-    });
-}
-
-async function updateDatabase() {
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userClicksRef = ref(database, `users/${userId}/clicks`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
-
-    try {
-        const energySnapshot = await get(userEnergyRef);
-        const energy = energySnapshot.val();
-
-        if (energy > 0) {
-            const newEnergy = energy - 1;
-            await set(userEnergyRef, newEnergy);
-
-            const clicksSnapshot = await get(userClicksRef);
-            const clicks = clicksSnapshot.val() || 0;
-            await set(userClicksRef, clicks + 1);
-
-            const totalClicksSnapshot = await get(userTotalClicksRef);
-            const totalClicks = totalClicksSnapshot.val() || 0;
-            await set(userTotalClicksRef, totalClicks + 1);
-        }
-    } catch (error) {
-        console.error('Error updating database:', error);
     }
 }
 
+// Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
 </script>
 </body>
