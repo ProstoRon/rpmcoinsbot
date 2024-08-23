@@ -16,22 +16,20 @@ body {
     overflow: hidden; /* Отключает прокрутку */
 }
 
-
 .styled-rectangle {
     width: 90%;
     height: 151px;
     background-color: #1b1b1b; /* Темный фон */
     border: 2px solid #8a2be2; /* Более тонкая фиолетовая обводка */
-    border-top-left-radius: -0; /* Прямой верхний левый угол */
-    border-top-right-radius: -0; /* Прямой верхний правый угол */
-    border-bottom-left-radius: 40px; /* Скругленный нижний левый угол */
-    border-bottom-right-radius: 40px; /* Скругленный нижний правый угол */
+    border-top-left-radius: 40px; /* Скругленный верхний левый угол */
+    border-top-right-radius: 40px; /* Скругленный верхний правый угол */
+    border-bottom-left-radius: 0; /* Прямой нижний левый угол */
+    border-bottom-right-radius: 0; /* Прямой нижний правый угол */
     box-shadow: 0 0 8px rgba(138, 43, 226, 1), 0 0 15px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.7); /* Прозрачное свечение */
     margin: 20px auto; /* Центрирование */
     justify-content: center;
     align-items: center;
 }
-
 
         .container {
             display: block;
@@ -141,14 +139,14 @@ body {
                 bottom: -20px;
             }
             
-            .styled-rectangle {
-                width: 98%; /* Установите ширину на 100% */
-                height: 65px;
-                position: relative; /* Используйте fixed для фиксации внизу страницы */
-                bottom: -120px; /* Расположите элемент внизу страницы */
-                margin: 0; /* Удалите все отступы */
-                transform: translateX(0.1);
-            }
+    .styled-rectangle {
+        width: 98%; /* Используйте ширину 98% для адаптивности */
+        height: 65px;
+        position: relative; /* Или fixed, если хотите закрепить элемент */
+        bottom: -120px; /* Положение снизу */
+        margin: 0 auto; /* Центрирование по горизонтали */
+        transform: translateX(0.1); /* Это изменение не будет влиять на центрирование */
+    }
             
             .button:active {
                transform: scale(0.9);
