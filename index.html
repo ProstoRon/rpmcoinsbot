@@ -221,21 +221,31 @@ function getCookie(name) {
     return null;
 }
 
+function getLastVisitTime() {
+    const lastVisit = getCookie('lastVisit');
+    return lastVisit ? parseInt(lastVisit, 10) : null;
+}
+
+function setLastVisitTime() {
+    const now = Date.now();
+    setCookie('lastVisit', now, 7);
+}
+
 function updateLocalEnergy() {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${energy};
+        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
     });
 
     onValue(userMaxEnergyRef, (snapshot) => {
         const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
+        document.getElementById('energy-counter').innerText = `Max Energy: ${maxEnergy}`;
     });
 
     onValue(userTotalClicksRef, (snapshot) => {
@@ -244,51 +254,6 @@ function updateLocalEnergy() {
     });
 }
 
-function startEnergyRegeneration() {
-    energyInterval = setInterval(() => {
-        const userEnergyRef = ref(database, users/${userId}/energy);
-        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-
-        get(userEnergyRef).then((energySnapshot) => {
-            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
-                const energy = energySnapshot.val();
-                const maxEnergy = maxEnergySnapshot.val();
-
-                if (energy < maxEnergy) {
-                    set(userEnergyRef, energy + 1);
-                }
-            });
-        });
-    }, 2000); // Восстановление энергии каждые 2 секунды
-}
-
-window.onload = function() {
-    userId = getParameterByName('userId');
-    if (!userId) {
-        userId = getCookie('userId');
-        if (!userId) {
-            userId = prompt('Enter your user ID:');
-            setCookie('userId', userId, 7);
-        }
-    }
-    updateLocalEnergy();
-    startEnergyRegeneration(); // Запуск восстановления энергии после загрузки страницы
-};
-
-function createFloatingText(x, y, clicks) {
-    const floatingText = document.createElement('div');
-    floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
-    floatingText.innerText = +${clicks};
-    document.body.appendChild(floatingText);
-
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000);
-}
-
-    
 function calculateAndUpdateEnergy() {
     if (!userId) return;
 
@@ -320,6 +285,51 @@ function calculateAndUpdateEnergy() {
     }
 }
 
+function startEnergyRegeneration() {
+    energyInterval = setInterval(() => {
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+        get(userEnergyRef).then((energySnapshot) => {
+            get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+                const energy = energySnapshot.val();
+                const maxEnergy = maxEnergySnapshot.val();
+
+                if (energy < maxEnergy) {
+                    set(userEnergyRef, energy + 1);
+                }
+            });
+        });
+    }, 2000); // Energy regeneration every 2 seconds
+}
+
+window.onload = function() {
+    userId = getParameterByName('userId');
+    if (!userId) {
+        userId = getCookie('userId');
+        if (!userId) {
+            userId = prompt('Enter your user ID:');
+            setCookie('userId', userId, 7);
+        }
+    }
+    calculateAndUpdateEnergy(); // Calculate and update energy based on offline time
+    updateLocalEnergy();
+    startEnergyRegeneration(); // Start energy regeneration after page load
+};
+
+function createFloatingText(x, y, clicks) {
+    const floatingText = document.createElement('div');
+    floatingText.className = 'floating-text';
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    floatingText.innerText = `+${clicks}`;
+    document.body.appendChild(floatingText);
+
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000);
+}
+
 function handleClick(event) {
     if (!userId) return;
 
@@ -327,31 +337,31 @@ function handleClick(event) {
     const y = event.clientY;
     const button = document.getElementById('button');
 
-    // Определение размеров кнопки и её центра
+    // Determine button size and center
     const rect = button.getBoundingClientRect();
     const buttonCenterX = rect.left + rect.width / 2;
     const buttonCenterY = rect.top + rect.height / 2;
 
-    // Вычисление угла наклона
+    // Calculate tilt
     const deltaX = x - buttonCenterX;
     const deltaY = y - buttonCenterY;
-    const tiltX = deltaX / 20; // Измените 20 для регулировки интенсивности наклона
-    const tiltY = -deltaY / 20; // Измените 20 для регулировки интенсивности наклона
+    const tiltX = deltaX / 20;
+    const tiltY = -deltaY / 20;
 
-    button.style.transform = rotateX(${tiltY}deg) rotateY(${tiltX}deg);
+    button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
 
-    // Применение анимации и сброс трансформации после завершения анимации
+    // Apply animation and reset transform after animation
     button.classList.add('animated');
     setTimeout(() => {
         button.classList.remove('animated');
         button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-    }, 300); // Убедитесь, что это значение соответствует времени анимации
+    }, 300);
 
-    setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
+    setTimeout(() => button.classList.remove('animated'), 300);
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userClicksRef = ref(database, users/${userId}/clicks);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     get(userEnergyRef).then((snapshot) => {
         const energy = snapshot.val();
@@ -361,12 +371,12 @@ function handleClick(event) {
 
             get(userClicksRef).then((snapshot) => {
                 const clicks = snapshot.val() || 0;
-                
-                // Отображаем значение clicks в floating-text
+
+                // Display clicks in floating-text
                 createFloatingText(x, y, clicks);
             });
 
-            // Увеличиваем и обновляем значение totalClicks
+            // Increment and update totalClicks
             get(userTotalClicksRef).then((snapshot) => {
                 const totalClicks = snapshot.val() || 0;
                 const newTotalClicks = totalClicks + 1;
