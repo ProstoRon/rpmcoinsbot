@@ -54,6 +54,7 @@ body {
             perspective: 1000px;
             transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
+            z-index: 1;
         }
 
         .button.animated {
@@ -100,6 +101,7 @@ body {
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
+            z-index: 2;
         }
 
         @keyframes floatUp {
@@ -128,7 +130,7 @@ body {
                 font-size: 36px; 
                 position: absolute;
                 bottom: 0px;
-                top: 50px;
+                top: -100px;
                 left: 10px;
             }
             
@@ -257,7 +259,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 3300); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
@@ -293,11 +295,14 @@ function startEnergyRegeneration() {
                 const maxEnergy = maxEnergySnapshot.val();
 
                 if (energy < maxEnergy) {
-                    set(userEnergyRef, energy + 1);
+                    const newEnergy = Math.min(energy + 1, maxEnergy);
+                    set(userEnergyRef, newEnergy);
+                    // Update UI
+                    document.getElementById('energy-counter').innerText = `${newEnergy}/${maxEnergy}`;
                 }
             });
         });
-    }, 3300); // Energy regeneration every 2 seconds
+    }, 2000); // Energy regeneration every 2 seconds
 }
 
 window.onload = function() {
@@ -330,7 +335,7 @@ function createFloatingText(x, y, clicks) {
         floatingText.remove();
     }, 1000);
 }
-    
+
 function vibrate(duration) {
     if ("vibrate" in navigator) {
         navigator.vibrate(duration);
