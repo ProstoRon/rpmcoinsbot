@@ -328,6 +328,14 @@ function createFloatingText(x, y, clicks) {
         floatingText.remove();
     }, 1000);
 }
+    
+function vibrate(duration) {
+    if ("vibrate" in navigator) {
+        navigator.vibrate(duration);
+    } else {
+        console.warn("Vibration API not supported");
+    }
+}
 
 async function handleClick(event) {
     if (!userId) return;
@@ -344,7 +352,7 @@ async function handleClick(event) {
         const y = touch.clientY;
 
         const button = document.getElementById('button');
-
+        vibrate(200);
         // Determine button size and center
         const rect = button.getBoundingClientRect();
         const buttonCenterX = rect.left + rect.width / 2;
