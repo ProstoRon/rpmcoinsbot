@@ -236,7 +236,6 @@ function updateLocalEnergy() {
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
         if (energy !== null) {
-            // Update energy display with both current and max energy
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
                 const maxEnergy = maxEnergySnapshot.val();
                 document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
@@ -259,7 +258,7 @@ function calculateAndUpdateEnergy() {
 
     if (lastVisit) {
         const timeDifference = now - lastVisit;
-        const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
+        const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
@@ -295,7 +294,10 @@ function startEnergyRegeneration() {
                 const maxEnergy = maxEnergySnapshot.val();
 
                 if (energy < maxEnergy) {
-                    set(userEnergyRef, energy + 1);
+                    const newEnergy = Math.min(energy + 1, maxEnergy);
+                    set(userEnergyRef, newEnergy);
+                    // Update UI
+                    document.getElementById('energy-counter').innerText = `${newEnergy}/${maxEnergy}`;
                 }
             });
         });
@@ -400,8 +402,8 @@ async function handleClick(event) {
                 document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
 
                 // Update the database asynchronously
-                set(userEnergyRef, newEnergy);
-                set(userTotalClicksRef, totalClicks + 1);
+                await set(userEnergyRef, newEnergy);
+                await set(userTotalClicksRef, totalClicks + 1);
             } else {
                 createFloatingText(x, y, 'No Energy');
             }
