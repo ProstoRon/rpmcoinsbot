@@ -347,6 +347,9 @@ async function handleClick(event) {
     // Vibrate
     vibrate(100); // Vibrate for 100 milliseconds
 
+    // Handle clicks within the button area
+    const button = document.getElementById('button');
+    const rect = button.getBoundingClientRect();
     const touches = Array.from(event.changedTouches); // Convert TouchList to Array
 
     // Process each touch
@@ -354,14 +357,17 @@ async function handleClick(event) {
         const x = touch.clientX;
         const y = touch.clientY;
 
-        // Immediate UI update for touch
-        updateUI(x, y);
+        // Check if the click is within the button's bounding box
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            // Immediate UI update for touch
+            updateUI(x, y);
 
-        // Asynchronous database update
-        try {
-            await updateDatabase();
-        } catch (error) {
-            console.error('Error updating database:', error);
+            // Asynchronous database update
+            try {
+                await updateDatabase();
+            } catch (error) {
+                console.error('Error updating database:', error);
+            }
         }
     }
 }
@@ -371,18 +377,19 @@ function updateUI(x, y) {
     const userClicksRef = ref(database, `users/${userId}/clicks`);
     const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-    get(userEnergyRef).then((energySnapshot) => {
+    get(userEnergyRef).then(async (energySnapshot) => {
         const energy = energySnapshot.val();
         if (energy > 0) {
             const newEnergy = energy - 1;
             document.getElementById('energy-counter').innerText = `${newEnergy}/${energySnapshot.val()}`;
-            
+
+            // Create floating text
             createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
 
-            get(userTotalClicksRef).then((totalClicksSnapshot) => {
-                const totalClicks = totalClicksSnapshot.val() || 0;
-                document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
-            });
+            // Increment and update totalClicks
+            const totalClicksSnapshot = await get(userTotalClicksRef);
+            const totalClicks = totalClicksSnapshot.val() || 0;
+            document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
         } else {
             createFloatingText(x, y, 'No Energy');
         }
@@ -415,6 +422,7 @@ async function updateDatabase() {
     }
 }
 
+// Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
 </script>
 </body>
