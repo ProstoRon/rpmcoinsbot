@@ -5,19 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Overpass:wght@200&display=swap" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: #262626;
-            overflow: hidden;
-        }
+        /* Общие стили для всех устройств */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: #262626;
+    overflow: hidden; /* Отключает прокрутку */
+}
+
+.styled-rectangle {
+    width: 100%;
+    height: 151px;
+    background-color: #1b1b1b; /* Темный фон */
+    border: 0px solid #8a2be2; /* Более тонкая фиолетовая обводка */
+    border-top-left-radius: 40px; /* Скругленный верхний левый угол */
+    border-top-right-radius: 40px; /* Скругленный верхний правый угол */
+    border-bottom-left-radius: 0; /* Прямой нижний левый угол */
+    border-bottom-right-radius: 0; /* Прямой нижний правый угол */
+    box-shadow: 0 0 8px rgba(138, 43, 226, 1), 0 0 15px rgba(138, 43, 226, 0.8), 0 0 20px rgba(138, 43, 226, 0.7); /* Прозрачное свечение */
+    margin: 20px auto; /* Центрирование */
+    justify-content: center;
+    align-items: center;
+}
 
         .container {
-            position: relative;
+            display: block;
             text-align: center;
+            position: relative;
         }
 
         .button {
@@ -31,15 +48,28 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
+            margin-bottom: 20px;
             position: relative;
             transform-style: preserve-3d;
             perspective: 1000px;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
         }
 
-        .button:active {
-            transform: scale(0.9);
+        .button.animated {
+            animation: tilt 0.3s ease forwards;
+        }
+
+        @keyframes tilt {
+            0% {
+                transform: rotateY(0deg);
+            }
+            50% {
+                transform: rotateY(-10deg); /* Наклон влево */
+            }
+            100% {
+                transform: rotateY(0deg); /* Возвращение в исходное состояние */
+            }
         }
 
         .energy-counter {
@@ -69,7 +99,7 @@
             animation: floatUp 1s ease forwards;
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease; 
         }
 
         @keyframes floatUp {
@@ -83,10 +113,15 @@
             }
         }
 
+        /* Стили только для мобильных устройств */
         @media only screen and (max-width: 768px) {
             .button {
-                width: 300px; 
-                height: 300px; 
+                width: 400px; 
+                height: 400px; 
+                position: relative;
+                justify-content: center;
+                align-items: center;
+                bottom: -50px;
             }
             
             .counter {
@@ -107,14 +142,14 @@
                 left: -50px;
             }
             
-            .styled-rectangle {
-                width: 98%;
-                height: 90px;
-                position: relative;
-                bottom: -90px;
-                margin: 0 auto;
-                transform: translateX(-0.3px);
-            }
+    .styled-rectangle {
+        width: 98%; /* Используйте ширину 98% для адаптивности */
+        height: 90px;
+        position: relative; /* Или fixed, если хотите закрепить элемент */
+        bottom: -90px; /* Положение снизу */
+        margin: 0 auto; /* Центрирование по горизонтали */
+        transform: translateX(-0.3px);
+    }
             
             .button:active {
                transform: scale(0.9);
@@ -127,9 +162,11 @@
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
         <div class="energy-counter" id="energy-counter">Energy: 0</div>
-        <div class="styled-rectangle"></div>
+        <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
-    <script type="module">
+
+    <!-- Подключаем Firebase -->
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
 import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
@@ -189,9 +226,9 @@ function setLastVisitTime() {
 function updateLocalEnergy() {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     // Fetch and update energy
     onValue(userEnergyRef, (snapshot) => {
@@ -200,7 +237,7 @@ function updateLocalEnergy() {
             // Update energy display with both current and max energy
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
                 const maxEnergy = maxEnergySnapshot.val();
-                document.getElementById('energy-counter').innerText = ${energy}/${maxEnergy};
+                document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
             });
         }
     });
@@ -222,8 +259,8 @@ function calculateAndUpdateEnergy() {
         const timeDifference = now - lastVisit;
         const energyRestored = Math.floor(timeDifference / 3000); // 1 energy every 2 seconds
 
-        const userEnergyRef = ref(database, users/${userId}/energy);
-        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
         get(userEnergyRef).then((energySnapshot) => {
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
@@ -247,8 +284,8 @@ function startEnergyRegeneration() {
     energyInterval = setInterval(() => {
         if (!userId) return;
 
-        const userEnergyRef = ref(database, users/${userId}/energy);
-        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
         get(userEnergyRef).then((energySnapshot) => {
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
@@ -284,9 +321,9 @@ window.onload = function() {
 function createFloatingText(x, y, clicks) {
     const floatingText = document.createElement('div');
     floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
-    floatingText.innerText = +${clicks};
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    floatingText.innerText = `+${clicks}`;
     document.body.appendChild(floatingText);
 
     setTimeout(() => {
@@ -328,7 +365,7 @@ async function handleClick(event) {
         const tiltX = deltaX / 20;
         const tiltY = -deltaY / 20;
 
-        button.style.transform = rotateX(${tiltY}deg) rotateY(${tiltX}deg);
+        button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
 
         // Apply animation and reset transform after animation
         button.classList.add('animated');
@@ -339,9 +376,9 @@ async function handleClick(event) {
 
         setTimeout(() => button.classList.remove('animated'), 300);
 
-        const userEnergyRef = ref(database, users/${userId}/energy);
-        const userClicksRef = ref(database, users/${userId}/clicks);
-        const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userClicksRef = ref(database, `users/${userId}/clicks`);
+        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
         try {
             const energySnapshot = await get(userEnergyRef);
@@ -350,7 +387,7 @@ async function handleClick(event) {
             if (energy > 0) {
                 const newEnergy = energy - 1;
                 // Update UI immediately
-                document.getElementById('energy-counter').innerText = ${newEnergy}/${energySnapshot.val()};
+                document.getElementById('energy-counter').innerText = `${newEnergy}/${energySnapshot.val()}`;
 
                 // Create floating text
                 createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
@@ -374,6 +411,6 @@ async function handleClick(event) {
 
 // Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
-    </script>
+</script>
 </body>
 </html>
