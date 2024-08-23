@@ -348,7 +348,7 @@ async function handleClick(event) {
     if (!userId) return;
 
     // Vibration
-    vibrate(5); // Vibrate for 100 milliseconds
+    vibrate(5); // Vibrate for 5 milliseconds
 
     const touches = event.touches; // Get all touches
     for (let i = 0; i < touches.length; i++) {
@@ -376,8 +376,7 @@ async function handleClick(event) {
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }, 300);
 
-        setTimeout(() => button.classList.remove('animated'), 300);
-
+        // Reference to the user's energy, clicks, and total clicks in Firebase
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userClicksRef = ref(database, `users/${userId}/clicks`);
         const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
@@ -387,20 +386,21 @@ async function handleClick(event) {
             const energy = energySnapshot.val();
 
             if (energy > 0) {
+                // Optimistically update the UI
                 const newEnergy = energy - 1;
-                await set(userEnergyRef, newEnergy);
+                document.getElementById('energy-counter').innerText = `${newEnergy}/${await get(ref(database, `users/${userId}/maxEnergy`)).val()}`;
 
-                const clicksSnapshot = await get(userClicksRef);
-                const clicks = clicksSnapshot.val() || 0;
-
-                // Display clicks in floating-text
-                createFloatingText(x, y, clicks);
-
-                // Increment and update totalClicks
+                // Increment and update totalClicks optimistically
                 const totalClicksSnapshot = await get(userTotalClicksRef);
                 const totalClicks = totalClicksSnapshot.val() || 0;
-                const newTotalClicks = totalClicks + 1;
-                await set(userTotalClicksRef, newTotalClicks);
+                document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
+
+                // Display clicks in floating-text
+                createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
+
+                // Update the database asynchronously
+                set(userEnergyRef, newEnergy).catch(error => console.error('Error updating energy:', error));
+                set(userTotalClicksRef, totalClicks + 1).catch(error => console.error('Error updating total clicks:', error));
             } else {
                 createFloatingText(x, y, 'No Energy');
             }
