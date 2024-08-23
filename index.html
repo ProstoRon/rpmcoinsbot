@@ -54,6 +54,7 @@ body {
             perspective: 1000px;
             transition: transform 0.2s ease; /* Плавная анимация */
             -webkit-tap-highlight-color: transparent;
+            z-index: 2;
         }
 
         .button.animated {
@@ -100,6 +101,7 @@ body {
             pointer-events: none;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.3s ease, color 0.3s ease; 
+            z-index: 1;
         }
 
         @keyframes floatUp {
