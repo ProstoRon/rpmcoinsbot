@@ -228,9 +228,9 @@ function setLastVisitTime() {
 function updateLocalEnergy() {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, `users/${userId}/energy`);
-    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
-    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+    const userEnergyRef = ref(database, users/${userId}/energy);
+    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
 
     // Fetch and update energy
     onValue(userEnergyRef, (snapshot) => {
@@ -239,7 +239,7 @@ function updateLocalEnergy() {
             // Update energy display with both current and max energy
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
                 const maxEnergy = maxEnergySnapshot.val();
-                document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
+                document.getElementById('energy-counter').innerText = ${energy}/${maxEnergy};
             });
         }
     });
@@ -261,8 +261,8 @@ function calculateAndUpdateEnergy() {
         const timeDifference = now - lastVisit;
         const energyRestored = Math.floor(timeDifference / 2000); // 1 energy every 2 seconds
 
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+        const userEnergyRef = ref(database, users/${userId}/energy);
+        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
 
         get(userEnergyRef).then((energySnapshot) => {
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
@@ -286,8 +286,8 @@ function startEnergyRegeneration() {
     energyInterval = setInterval(() => {
         if (!userId) return;
 
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+        const userEnergyRef = ref(database, users/${userId}/energy);
+        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
 
         get(userEnergyRef).then((energySnapshot) => {
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
@@ -298,7 +298,7 @@ function startEnergyRegeneration() {
                     const newEnergy = Math.min(energy + 1, maxEnergy);
                     set(userEnergyRef, newEnergy);
                     // Update UI
-                    document.getElementById('energy-counter').innerText = `${newEnergy}/${maxEnergy}`;
+                    document.getElementById('energy-counter').innerText = ${newEnergy}/${maxEnergy};
                 }
             });
         });
@@ -326,9 +326,9 @@ window.onload = function() {
 function createFloatingText(x, y, clicks) {
     const floatingText = document.createElement('div');
     floatingText.className = 'floating-text';
-    floatingText.style.left = `${x}px`;
-    floatingText.style.top = `${y}px`;
-    floatingText.innerText = `+${clicks}`;
+    floatingText.style.left = ${x}px;
+    floatingText.style.top = ${y}px;
+    floatingText.innerText = +${clicks};
     document.body.appendChild(floatingText);
 
     setTimeout(() => {
@@ -367,7 +367,7 @@ async function handleClick(event) {
         const tiltX = deltaX / 20;
         const tiltY = -deltaY / 20;
 
-        button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
+        button.style.transform = rotateX(${tiltY}deg) rotateY(${tiltX}deg);
 
         // Apply animation and reset transform after animation
         button.classList.add('animated');
@@ -378,30 +378,29 @@ async function handleClick(event) {
 
         setTimeout(() => button.classList.remove('animated'), 300);
 
-        const userEnergyRef = ref(database, `users/${userId}/energy`);
-        const userClicksRef = ref(database, `users/${userId}/clicks`);
-        const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
+        const userEnergyRef = ref(database, users/${userId}/energy);
+        const userClicksRef = ref(database, users/${userId}/clicks);
+        const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
 
         try {
             const energySnapshot = await get(userEnergyRef);
             const energy = energySnapshot.val();
 
             if (energy > 0) {
-                // Optimistically update the UI
                 const newEnergy = energy - 1;
-                document.getElementById('energy-counter').innerText = `${newEnergy}/${await get(ref(database, `users/${userId}/maxEnergy`)).val()}`;
+                await set(userEnergyRef, newEnergy);
 
-                // Increment and update totalClicks optimistically
-                const totalClicksSnapshot = await get(userTotalClicksRef);
-                const totalClicks = totalClicksSnapshot.val() || 0;
-                document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
+                const clicksSnapshot = await get(userClicksRef);
+                const clicks = clicksSnapshot.val() || 0;
 
                 // Display clicks in floating-text
-                createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
+                createFloatingText(x, y, clicks);
 
-                // Update the database asynchronously
-                set(userEnergyRef, newEnergy).catch(error => console.error('Error updating energy:', error));
-                set(userTotalClicksRef, totalClicks + 1).catch(error => console.error('Error updating total clicks:', error));
+                // Increment and update totalClicks
+                const totalClicksSnapshot = await get(userTotalClicksRef);
+                const totalClicks = totalClicksSnapshot.val() || 0;
+                const newTotalClicks = totalClicks + 1;
+                await set(userTotalClicksRef, newTotalClicks);
             } else {
                 createFloatingText(x, y, 'No Energy');
             }
