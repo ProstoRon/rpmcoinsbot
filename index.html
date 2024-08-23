@@ -194,6 +194,7 @@ const database = getDatabase(app);
 
 let userId = null;
 let energyInterval;
+const energyRegenerationRate = 2000; // Энергия восстанавливается каждые 2 секунды
 
 function getParameterByName(name) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -224,18 +225,18 @@ function getCookie(name) {
 function updateLocalEnergy() {
     if (!userId) return;
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${energy};
+        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
     });
 
     onValue(userMaxEnergyRef, (snapshot) => {
         const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = Energy: ${maxEnergy};
+        document.getElementById('energy-counter').innerText = `Energy: ${maxEnergy}`;
     });
 
     onValue(userTotalClicksRef, (snapshot) => {
@@ -246,8 +247,8 @@ function updateLocalEnergy() {
 
 function startEnergyRegeneration() {
     energyInterval = setInterval(() => {
-        const userEnergyRef = ref(database, users/${userId}/energy);
-        const userMaxEnergyRef = ref(database, users/${userId}/maxEnergy);
+        const userEnergyRef = ref(database, `users/${userId}/energy`);
+        const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
 
         get(userEnergyRef).then((energySnapshot) => {
             get(userMaxEnergyRef).then((maxEnergySnapshot) => {
@@ -259,7 +260,35 @@ function startEnergyRegeneration() {
                 }
             });
         });
-    }, 2000); // Восстановление энергии каждые 2 секунды
+    }, energyRegenerationRate); // Восстановление энергии каждые 2 секунды
+}
+
+function updateEnergyBasedOnLastVisit() {
+    if (!userId) return;
+
+    const lastVisit = getCookie('lastVisit');
+    const now = Date.now();
+
+    if (lastVisit) {
+        const timeElapsed = now - parseInt(lastVisit, 10);
+        const energyGained = Math.floor(timeElapsed / energyRegenerationRate);
+
+        if (energyGained > 0) {
+            const userEnergyRef = ref(database, `users/${userId}/energy`);
+            const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
+
+            get(userEnergyRef).then((energySnapshot) => {
+                get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+                    const energy = energySnapshot.val();
+                    const maxEnergy = maxEnergySnapshot.val();
+
+                    const newEnergy = Math.min(energy + energyGained, maxEnergy);
+                    set(userEnergyRef, newEnergy);
+                });
+            });
+        }
+    }
+    setCookie('lastVisit', now, 7); // Обновление времени последнего посещения
 }
 
 window.onload = function() {
@@ -271,6 +300,7 @@ window.onload = function() {
             setCookie('userId', userId, 7);
         }
     }
+    updateEnergyBasedOnLastVisit();
     updateLocalEnergy();
     startEnergyRegeneration(); // Запуск восстановления энергии после загрузки страницы
 };
@@ -278,9 +308,9 @@ window.onload = function() {
 function createFloatingText(x, y, clicks) {
     const floatingText = document.createElement('div');
     floatingText.className = 'floating-text';
-    floatingText.style.left = ${x}px;
-    floatingText.style.top = ${y}px;
-    floatingText.innerText = +${clicks};
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+    floatingText.innerText = `+${clicks}`;
     document.body.appendChild(floatingText);
 
     setTimeout(() => {
@@ -306,7 +336,7 @@ function handleClick(event) {
     const tiltX = deltaX / 20; // Измените 20 для регулировки интенсивности наклона
     const tiltY = -deltaY / 20; // Измените 20 для регулировки интенсивности наклона
 
-    button.style.transform = rotateX(${tiltY}deg) rotateY(${tiltX}deg);
+    button.style.transform = `rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
 
     // Применение анимации и сброс трансформации после завершения анимации
     button.classList.add('animated');
@@ -317,9 +347,9 @@ function handleClick(event) {
 
     setTimeout(() => button.classList.remove('animated'), 300); // Удаление класса через время анимации
 
-    const userEnergyRef = ref(database, users/${userId}/energy);
-    const userClicksRef = ref(database, users/${userId}/clicks);
-    const userTotalClicksRef = ref(database, users/${userId}/totalClicks);
+    const userEnergyRef = ref(database, `users/${userId}/energy`);
+    const userClicksRef = ref(database, `users/${userId}/clicks`);
+    const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
     get(userEnergyRef).then((snapshot) => {
         const energy = snapshot.val();
@@ -348,6 +378,5 @@ function handleClick(event) {
 }
 
 document.getElementById('button').addEventListener('click', handleClick);
-</script>
 </body>
 </html>
