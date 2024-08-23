@@ -245,7 +245,7 @@ function updateLocalEnergy() {
     // Fetch and update total clicks
     onValue(userTotalClicksRef, (snapshot) => {
         const totalClicks = snapshot.val() || 0;
-        document.getElementById('counter').innerText = totalClicks;
+        document.getElementById('counter').innerText = totalClicks.toLocaleString(); // Adding comma formatting
     });
 }
 
