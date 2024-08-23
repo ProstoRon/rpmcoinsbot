@@ -169,7 +169,7 @@
     <div class="container">
         <div class="button" id="button"></div>
         <div class="counter" id="counter">0</div>
-        <div class="energy-counter" id="energy-counter">Energy: 0</div>
+        <div class="energy-counter" id="energy-counter">0</div>
         <div class="styled-rectangle"></div> <!-- Добавление прямоугольника -->
     </div>
 
@@ -240,7 +240,7 @@ function updateLocalEnergy() {
 
     onValue(userEnergyRef, (snapshot) => {
         const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `Energy: ${energy}`;
+        document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
     });
 
     onValue(userMaxEnergyRef, (snapshot) => {
