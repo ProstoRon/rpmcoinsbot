@@ -83,15 +83,20 @@
             }
         }
 
-        .energy-counter {
-            font-size: 48px; 
-            color: #f0b924;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); 
-            font-family: 'Nunito';
-            position: relative;
-            top: 30px;
-        }
+         #energy-counter {
+    font-size: 18px;
+}
+
+.energy {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.max-energy {
+    font-size: 16px;
+    color: blue;
+}
+
 
         .counter {
             font-size: 48px; 
@@ -238,14 +243,18 @@ function updateLocalEnergy() {
     const userMaxEnergyRef = ref(database, `users/${userId}/maxEnergy`);
     const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
 
-    onValue(userEnergyRef, (snapshot) => {
-        const energy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `${energy}/${maxEnergy}`;
-    });
-
-    onValue(userMaxEnergyRef, (snapshot) => {
-        const maxEnergy = snapshot.val();
-        document.getElementById('energy-counter').innerText = `Max Energy: ${maxEnergy}`;
+    // Fetch energy and maxEnergy
+    get(userEnergyRef).then((energySnapshot) => {
+        get(userMaxEnergyRef).then((maxEnergySnapshot) => {
+            const energy = energySnapshot.val();
+            const maxEnergy = maxEnergySnapshot.val();
+            
+            // Update the energy counter with styled maximum energy
+            document.getElementById('energy-counter').innerHTML = `
+                <span class="energy">${energy}</span> / 
+                <span class="max-energy">${maxEnergy}</span>
+            `;
+        });
     });
 
     onValue(userTotalClicksRef, (snapshot) => {
@@ -253,6 +262,7 @@ function updateLocalEnergy() {
         document.getElementById('counter').innerText = totalClicks;
     });
 }
+
 
 function calculateAndUpdateEnergy() {
     if (!userId) return;
