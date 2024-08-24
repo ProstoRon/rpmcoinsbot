@@ -347,7 +347,7 @@ function vibrate(duration) {
 async function handleClick(event) {
     if (!userId) return;
 
-    // Vibration for feedback
+    // Vibration
     vibrate(5); // Vibrate for 5 milliseconds
 
     const touches = event.touches; // Get all touches
@@ -361,7 +361,7 @@ async function handleClick(event) {
         const buttonCenterX = rect.left + rect.width / 2;
         const buttonCenterY = rect.top + rect.height / 2;
 
-        // Calculate tilt for visual feedback
+        // Calculate tilt
         const deltaX = x - buttonCenterX;
         const deltaY = y - buttonCenterY;
         const tiltX = deltaX / 20;
@@ -376,7 +376,7 @@ async function handleClick(event) {
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
         }, 300);
 
-        // Firebase references
+        // Reference to the user's energy, clicks, and total clicks in Firebase
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userClicksRef = ref(database, `users/${userId}/clicks`);
         const userTotalClicksRef = ref(database, `users/${userId}/totalClicks`);
@@ -386,28 +386,22 @@ async function handleClick(event) {
             const energy = energySnapshot.val();
 
             if (energy > 0) {
-                // Optimistically decrease energy and update UI
+                // Optimistically update the UI
                 const newEnergy = energy - 1;
                 document.getElementById('energy-counter').innerText = `${newEnergy}/${await get(ref(database, `users/${userId}/maxEnergy`)).val()}`;
 
-                // Update the energy value in the database
-                set(userEnergyRef, newEnergy).catch(error => console.error('Error updating energy:', error));
-
-                // Get current clicks and update UI immediately
-                const clicksSnapshot = await get(userClicksRef);
-                const clicks = (clicksSnapshot.val() || 0) + 1;
-                createFloatingText(x, y, clicks); // Update floating text
-
-                // Increment and update total clicks
+                // Increment and update totalClicks optimistically
                 const totalClicksSnapshot = await get(userTotalClicksRef);
-                const totalClicks = (totalClicksSnapshot.val() || 0) + 1;
-                document.getElementById('counter').innerText = totalClicks.toLocaleString();
+                const totalClicks = totalClicksSnapshot.val() || 0;
+                document.getElementById('counter').innerText = (totalClicks + 1).toLocaleString();
 
-                // Update clicks and total clicks in the database asynchronously
-                set(userClicksRef, clicks).catch(error => console.error('Error updating clicks:', error));
-                set(userTotalClicksRef, totalClicks).catch(error => console.error('Error updating total clicks:', error));
+                // Display clicks in floating-text
+                createFloatingText(x, y, (await get(userClicksRef)).val() || 0);
+
+                // Update the database asynchronously
+                set(userEnergyRef, newEnergy).catch(error => console.error('Error updating energy:', error));
+                set(userTotalClicksRef, totalClicks + 1).catch(error => console.error('Error updating total clicks:', error));
             } else {
-                // Display "No Energy" message if energy is depleted
                 createFloatingText(x, y, 'No Energy');
             }
         } catch (error) {
@@ -419,7 +413,7 @@ async function handleClick(event) {
     event.preventDefault();
 }
 
-// Add touch event listener to the button
+// Add touch event listener
 document.getElementById('button').addEventListener('touchstart', handleClick);
 </script>
 </body>
