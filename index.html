@@ -345,13 +345,10 @@ function vibrate(duration) {
 }
 
 
-let isProcessingClick = false;
 let touchIds = new Set(); // Track unique touch identifiers
 
 async function handleTouchStart(event) {
-    if (!userId || isProcessingClick) return;
-
-    isProcessingClick = true;
+    if (!userId) return;
 
     const touches = Array.from(event.touches);
     const promises = touches.map(async (touch) => {
@@ -418,10 +415,8 @@ async function handleTouchStart(event) {
     // Wait for all touch events to be processed
     await Promise.all(promises);
 
-    setTimeout(() => {
-        isProcessingClick = false;
-        touchIds.clear(); // Clear the touchIds set for the next interaction
-    }, 300);
+    // Clean up touch identifiers
+    touchIds.clear(); 
 
     event.preventDefault();
 }
