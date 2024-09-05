@@ -346,21 +346,19 @@ function vibrate(duration) {
 
 
 let isProcessingClick = false;
+let touchIds = new Set(); // Track unique touch identifiers
 
-async function handleClick(event) {
-    if (!userId || isProcessingClick) return; // Prevent multiple processing
+async function handleTouchStart(event) {
+    if (!userId || isProcessingClick) return;
 
     isProcessingClick = true;
-    vibrate(5); // Vibrate for 100 milliseconds
 
-    const touches = Array.from(event.changedTouches); 
-    const uniqueTouches = new Set(); // To track unique touches
-
+    const touches = Array.from(event.touches);
     const promises = touches.map(async (touch) => {
-        const touchId = touch.identifier; // Unique identifier for each touch
-        if (uniqueTouches.has(touchId)) return; // Skip if already processed
+        const touchId = touch.identifier;
+        if (touchIds.has(touchId)) return; // Skip if already processed
 
-        uniqueTouches.add(touchId); // Add touchId to the set
+        touchIds.add(touchId); // Add touchId to the set
 
         const x = touch.clientX;
         const y = touch.clientY;
@@ -420,17 +418,25 @@ async function handleClick(event) {
     // Wait for all touch events to be processed
     await Promise.all(promises);
 
-    // Allow processing new clicks after a short delay
     setTimeout(() => {
         isProcessingClick = false;
+        touchIds.clear(); // Clear the touchIds set for the next interaction
     }, 300);
 
-    // Prevent default action to avoid potential issues with multi-touch
     event.preventDefault();
 }
 
-// Add touch event listener
-document.getElementById('button').addEventListener('touchend', handleClick);
+function handleTouchEnd(event) {
+    // Clean up touch identifiers when touch ends
+    const touches = Array.from(event.changedTouches);
+    touches.forEach(touch => {
+        touchIds.delete(touch.identifier);
+    });
+}
+
+// Add touch event listeners
+document.getElementById('button').addEventListener('touchstart', handleTouchStart);
+document.getElementById('button').addEventListener('touchend', handleTouchEnd);
 </script>
 </body>
 </html>
