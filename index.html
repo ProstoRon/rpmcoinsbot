@@ -345,14 +345,15 @@ function vibrate(duration) {
 }
 
 
-async function handleClick(event) {
-    if (!userId) return;
+let isProcessingClick = false;
 
-    // Vibration
+async function handleClick(event) {
+    if (!userId || isProcessingClick) return; // Prevent multiple processing
+
+    isProcessingClick = true;
     vibrate(5); // Vibrate for 100 milliseconds
 
-    // Get all touches
-    const touches = Array.from(event.touches); 
+    const touches = Array.from(event.changedTouches); 
     const uniqueTouches = new Set(); // To track unique touches
 
     const promises = touches.map(async (touch) => {
@@ -419,12 +420,17 @@ async function handleClick(event) {
     // Wait for all touch events to be processed
     await Promise.all(promises);
 
+    // Allow processing new clicks after a short delay
+    setTimeout(() => {
+        isProcessingClick = false;
+    }, 300);
+
     // Prevent default action to avoid potential issues with multi-touch
     event.preventDefault();
 }
 
 // Add touch event listener
-document.getElementById('button').addEventListener('touchstart', handleClick);
+document.getElementById('button').addEventListener('touchend', handleClick);
 </script>
 </body>
 </html>
