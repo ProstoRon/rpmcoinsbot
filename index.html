@@ -344,15 +344,16 @@ function vibrate(duration) {
     }
 }
 
+
 async function handleClick(event) {
     if (!userId) return;
 
     // Vibration
     vibrate(5); // Vibrate for 100 milliseconds
 
-    const touches = event.touches; // Get all touches
-    for (let i = 0; i < touches.length; i++) {
-        const touch = touches[i];
+    // Get all touches
+    const touches = Array.from(event.touches); 
+    const promises = touches.map(async (touch) => {
         const x = touch.clientX;
         const y = touch.clientY;
 
@@ -371,12 +372,11 @@ async function handleClick(event) {
 
         // Apply animation and reset transform after animation
         button.classList.add('animated');
-        setTimeout(() => {
+        await new Promise(resolve => setTimeout(() => {
             button.classList.remove('animated');
             button.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        }, 300);
-
-        setTimeout(() => button.classList.remove('animated'), 300);
+            resolve();
+        }, 300));
 
         const userEnergyRef = ref(database, `users/${userId}/energy`);
         const userClicksRef = ref(database, `users/${userId}/clicks`);
@@ -407,7 +407,10 @@ async function handleClick(event) {
         } catch (error) {
             console.error('Error handling click:', error);
         }
-    }
+    });
+
+    // Wait for all touch events to be processed
+    await Promise.all(promises);
 
     // Prevent default action to avoid potential issues with multi-touch
     event.preventDefault();
