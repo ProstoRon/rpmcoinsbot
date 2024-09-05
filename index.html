@@ -345,6 +345,14 @@ function vibrate(duration) {
 }
 
 
+function updateUI(x, y, clicks, energy) {
+    // Update floating text immediately
+    createFloatingText(x, y, clicks);
+
+    // Update energy counter immediately
+    document.getElementById('energy-counter').innerText = `${energy}`;
+}
+
 async function handleClick(event) {
     if (!userId) return;
 
@@ -393,8 +401,8 @@ async function handleClick(event) {
                 const clicksSnapshot = await get(userClicksRef);
                 const clicks = clicksSnapshot.val() || 0;
 
-                // Display clicks in floating-text
-                createFloatingText(x, y, clicks);
+                // Immediately update UI
+                updateUI(x, y, clicks + 1, newEnergy); // Increment clicks for display
 
                 // Increment and update totalClicks
                 const totalClicksSnapshot = await get(userTotalClicksRef);
@@ -402,7 +410,7 @@ async function handleClick(event) {
                 const newTotalClicks = totalClicks + 1;
                 await set(userTotalClicksRef, newTotalClicks);
             } else {
-                createFloatingText(x, y, 'No Energy');
+                updateUI(x, y, 'No Energy', energy);
             }
         } catch (error) {
             console.error('Error handling click:', error);
